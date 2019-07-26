@@ -18,6 +18,7 @@ dat <- dat[floor(runif(20,1, length(dat$Latitude))),] # Subset to 20 random valu
 #         "nanop_brewin2010at", "l2_flags", "ipar", "dt", "chl_oc3", "chl_gsm", "K_490")
 
 pr <- c("sst", "chl_oc3")
-res_temp <- "12mNy"
+res_temp <- "1d"
+res_spat <- 10 # Return the average of res_spat x res_spat pixels
 
-dat <- fIMOS_MatchMODIS(dat, pr, res_temp)
+dat <- fIMOS_MatchMODIS(dat, pr, res_temp, res_spat)
