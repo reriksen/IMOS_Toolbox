@@ -2,6 +2,7 @@ library(readr)
 library(dplyr)
 
 source("fIMOS_MatchMODIS.R")
+source("fIMOS_MatchAltimetry.R")
 
 # Get the latitude/longitude and date from the file
 filename <- "TestData_IMOS_National_Reference_Station_(NRS)_-_Zooplankton_Abundance_HTL.csv"
@@ -17,4 +18,8 @@ pr <- c("sst", "chl_oc3")
 res_temp <- "1d"
 res_spat <- 10 # Return the average of res_spat x res_spat pixels
 
+# Get MODIS Data
 dat <- fIMOS_MatchMODIS(dat, pr, res_temp, res_spat)
+
+# Get Altimetry
+dat <- fIMOS_MatchAltimetry(dat, res_spat)
