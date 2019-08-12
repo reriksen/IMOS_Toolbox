@@ -46,15 +46,16 @@ fIMOS_MatchMODIS <- function(dat, pr, ...) {
     res_spat <-  1
   }
   
-  if (sum(c("Day","Month","Year") %in% colnames(dat)) != 3) { # Check that Day, Month, Year exists
-    if (sum(str_detect(colnames(dat),"Date")) == 1) { # Otherwise check that Date exists
-      dat <- dat %>% 
-        mutate(Day = day(Date),
-               Month = month(Date),
-               Year = year(Date))
-    } else {
-      print("Missing Date or Day/Month/Year columns")
-    }
+if (("Date" %in% colnames(dat))==FALSE) {
+  stop("No Date column found in data. Please include a Date column in POSIXct format")
+}
+
+  # If Day, Month, Year doesn't exist we create them
+  if (sum(c("Day","Month","Year") %in% colnames(dat)) != 3) {   
+    dat <- dat %>% 
+      mutate(Day = day(Date),
+             Month = month(Date),
+             Year = year(Date))
   }
   
   # Create a NA matrix of size length(Latitude) x no_products and fill it incrementally
@@ -91,26 +92,29 @@ fIMOS_MatchMODIS <- function(dat, pr, ...) {
         vr <- paste0(pr[j],"_mean_mean")
       }
       
-      if ((dat$Year[i] > 2002 & str_detect(pr[j],"1d")) || 
-          (dat$Year[i] == 2002 & dat$Month[i] >= 7 & dat$Day[i] >= 3 & str_detect(res_temp,"1d")) ||
-          (dat$Year[i] == 2002 & dat$Month[i] >= 8 & str_detect(res_temp,"1m")) ||
-          (dat$Year[i] >= 2003 & dat$Year[i] <= 2014 & str_detect(res_temp,"1y")) ||
-          (dat$Year[i] >= 2003 & dat$Year[i] <= 2014 & str_detect(res_temp,"1mNy")) ||
-          (dat$Year[i] >= 2003 & dat$Year[i] <= 2014 & str_detect(res_temp,"12mNy"))) { # MODIS is only available from 4/7/2002
-            nc <- nc_open(imos_url, write=FALSE, readunlim=TRUE, verbose=FALSE)
-            
-            # Approximate nearest neighbour
-            idx_lon <- ann(as.matrix(nc$dim$lon$vals), as.matrix(dat$Longitude[i]), k = 1, verbose = FALSE)$knnIndexDist[,1]
-            idx_lat <- ann(as.matrix(nc$dim$lat$vals), as.matrix(dat$Latitude[i]), k = 1, verbose = FALSE)$knnIndexDist[,1]
-            cnt <- c(1,1,1)
-            if (res_spat > 1) { # If more than 1x1 pixel is requested we adjust the idx by res_spat/2 and count by res_spa
-              idx_lon <- idx_lon - floor(res_spat/2)
-              idx_lon <- idx_lon - floor(res_spat/2)
-              cnt <- c(res_spat, res_spat, 1)
-            }
-            out <- ncvar_get(nc, vr, start=c(idx_lon, idx_lat, 1), count = cnt)
-            mat[i,j] <- mean(out,na.rm = TRUE)
-          }
+      if ((dat$Date[i] >= dmy("5,7,2002") & str_detect(pr[j],"1d")) || 
+          (dat$Date[i] >= dmy("5,7,2002") & str_detect(res_temp,"1d")) ||
+          (dat$Date[i] >= dmy("1,8,2002") & str_detect(res_temp,"1m")) ||
+          (dat$Date[i] >= dmy("1,1,2003") & dat$Date[i] <= dmy("31,12,2014") & str_detect(res_temp,"1y")) ||
+          (dat$Date[i] >= dmy("1,1,2003") & dat$Date[i] <= dmy("31,12,2014") & str_detect(res_temp,"1mNy")) ||
+          (dat$Date[i] >= dmy("1,1,2003") & dat$Date[i] <= dmy("31,12,2014") & str_detect(res_temp,"12mNy"))) { # MODIS is only available from 5/7/2002
+        
+        nc <- nc_open(imos_url, write=FALSE, readunlim=TRUE, verbose=FALSE)
+        
+        # Approximate nearest neighbour
+        idx_lon <- ann(as.matrix(nc$dim$lon$vals), as.matrix(dat$Longitude[i]), k = 1, verbose = FALSE)$knnIndexDist[,1]
+        idx_lat <- ann(as.matrix(nc$dim$lat$vals), as.matrix(dat$Latitude[i]), k = 1, verbose = FALSE)$knnIndexDist[,1]
+        cnt <- c(1,1,1)
+        if (res_spat > 1) { # If more than 1x1 pixel is requested we adjust the idx by res_spat/2 and count by res_spa
+          idx_lon <- idx_lon - floor(res_spat/2)
+          idx_lon <- idx_lon - floor(res_spat/2)
+          cnt <- c(res_spat, res_spat, 1)
+        }
+        out <- ncvar_get(nc, vr, start=c(idx_lon, idx_lat, 1), count = cnt)
+        mat[i,j] <- mean(out,na.rm = TRUE)
+      } else {
+        print(paste0('Date (',dat$Day[i],'/',dat$Month[i],'/',dat$Year[i],') prior to MODIS launch'))
+      }
     }
     setTxtProgressBar(pb, i)
   }

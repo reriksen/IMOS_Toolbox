@@ -6,6 +6,13 @@ source("fIMOS_MatchAltimetry.R")
 
 # If on Windows you will need to install a development 
 # version of ncdf4 which allows the use of OpenDAP
+if(.Platform$OS.type == "windows") {
+  warning("It looks like you are on a Windows PC - You will need to install a 
+  development version of ncdf4 which allows the use of OpenDAP. Please 
+  run devtools::install_github('mdsumner/ncdf4') to install or 
+  see 'https://github.com/mdsumner/ncdf4' for more information.")
+}
+
 # install.packages("devtools")
 # devtools::install_github("mdsumner/ncdf4")
 
@@ -13,6 +20,9 @@ source("fIMOS_MatchAltimetry.R")
 filename <- "TestData_IMOS_National_Reference_Station_(NRS)_-_Zooplankton_Abundance_HTL.csv"
 dat <- read_csv(filename)
 dat <- dat[floor(runif(20,1, length(dat$Latitude))),] # Subset to 20 random values for subsetting
+
+dat <- dat %>% 
+  rename(Date = SampleDateLocal)
 
 # Possible products
 # pr <- c("sst_quality", "sst", "picop_brewin2012in", "picop_brewin2010at", "par", 
