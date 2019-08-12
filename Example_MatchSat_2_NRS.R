@@ -4,6 +4,11 @@ library(dplyr)
 source("fIMOS_MatchMODIS.R")
 source("fIMOS_MatchAltimetry.R")
 
+# If on Windows you will need to install a development 
+# version of ncdf4 which allows the use of OpenDAP
+# install.packages("devtools")
+# devtools::install_github("mdsumner/ncdf4")
+
 # Get the latitude/longitude and date from the file
 filename <- "TestData_IMOS_National_Reference_Station_(NRS)_-_Zooplankton_Abundance_HTL.csv"
 dat <- read_csv(filename)
