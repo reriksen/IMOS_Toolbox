@@ -37,3 +37,4 @@ dat <- fIMOS_MatchMODIS(dat, pr, res_temp, res_spat)
 
 # Get Altimetry
 dat <- fIMOS_MatchAltimetry(dat, res_spat)
+

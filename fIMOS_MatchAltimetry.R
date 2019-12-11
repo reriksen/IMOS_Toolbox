@@ -52,7 +52,7 @@ fIMOS_MatchAltimetry <- function(dat, ...) {
     url_base = 'http://thredds.aodn.org.au/thredds/dodsC/IMOS/OceanCurrent/GSLA/DM00/yearfiles/';
     
     if (yr==2019) {file = 'IMOS_OceanCurrent_HV_2019_C-20190605T233144Z.nc.gz'}
-    if (yr==2018) {file = 'IMOS_OceanCurrent_HV_2018_C-20180430T234300Z.nc.gz'}
+    if (yr==2018) {file = 'IMOS_OceanCurrent_HV_2018_C-20190129T223442Z.nc.gz'}
     if (yr==2017) {file = 'IMOS_OceanCurrent_HV_2017_C-20180129T224442Z.nc.gz'}	
     if (yr==2016) {file = 'IMOS_OceanCurrent_HV_2016_C-20170129T222646Z.nc.gz'}
     if (yr==2015) {file = 'IMOS_OceanCurrent_HV_2015_C-20160903T062732Z.nc.gz'}
