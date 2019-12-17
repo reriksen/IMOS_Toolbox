@@ -19,6 +19,7 @@ if(.Platform$OS.type == "windows") {
 # Get the latitude/longitude and date from the file
 filename <- "TestData_IMOS_National_Reference_Station_(NRS)_-_Zooplankton_Abundance_HTL.csv"
 dat <- read_csv(filename)
+# dat <- dat[floor(runif(20,1, length(dat$Latitude))),] # Subset to 20 random values for subsetting
 
 dat <- dat %>% 
   rename(Date = SampleDateLocal)
@@ -37,4 +38,3 @@ dat <- fIMOS_MatchMODIS(dat, pr, res_temp, res_spat)
 
 # Get Altimetry
 dat <- fIMOS_MatchAltimetry(dat, res_spat)
-
