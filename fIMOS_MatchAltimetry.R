@@ -85,6 +85,10 @@ fIMOS_MatchAltimetry <- function(dat, ...) {
     # Approximate nearest neighbour
     idx_lon <- ann(as.matrix(nc$dim$LONGITUDE$vals), as.matrix(dat$Longitude[i]), k = 1, verbose = FALSE)$knnIndexDist[,1]
     idx_lat <- ann(as.matrix(nc$dim$LATITUDE$vals), as.matrix(dat$Latitude[i]), k = 1, verbose = FALSE)$knnIndexDist[,1]
+    
+    idx_time <- ann(as.matrix(yday(days(nc$dim$TIME$vals) + ymd("1985-01-01"))), as.matrix(yday(dat$Date[i])), k = 1, verbose = FALSE)$knnIndexDist[,1]
+    
+    
     cnt <- c(1,1,1)
     if (res_spat > 1) { # If more than 1x1 pixel is requested we adjust the idx by res_spat/2 and count by res_spa
       idx_lon <- idx_lon - floor(res_spat/2)
@@ -93,14 +97,14 @@ fIMOS_MatchAltimetry <- function(dat, ...) {
     }
     
     # Extract, average and add Altimetry data to dataframe
-    GSLA <- ncvar_get(nc, "GSLA", start=c(idx_lon, idx_lat, 1), count = cnt)
+    GSLA <- ncvar_get(nc, "GSLA", start=c(idx_lon, idx_lat, idx_time), count = cnt)
     dat$GSLA[i] <- mean(GSLA, na.rm = TRUE)
-    GSL <- ncvar_get(nc, "GSL", start=c(idx_lon, idx_lat, 1), count = cnt)
+    GSL <- ncvar_get(nc, "GSL", start=c(idx_lon, idx_lat, idx_time), count = cnt)
     dat$GSL[i] <- mean(GSL, na.rm = TRUE)
     
-    UCUR <- ncvar_get(nc, "UCUR", start=c(idx_lon, idx_lat, 1), count = cnt)
+    UCUR <- ncvar_get(nc, "UCUR", start=c(idx_lon, idx_lat, idx_time), count = cnt)
     dat$UCUR[i] <- mean(UCUR, na.rm = TRUE)
-    VCUR <- ncvar_get(nc, "VCUR", start=c(idx_lon, idx_lat, 1), count = cnt)
+    VCUR <- ncvar_get(nc, "VCUR", start=c(idx_lon, idx_lat, idx_time), count = cnt)
     dat$VCUR[i] <- mean(VCUR, na.rm = TRUE) 
     
     setTxtProgressBar(pb, i)
