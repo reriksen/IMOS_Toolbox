@@ -46,10 +46,10 @@ fIMOS_MatchMODIS <- function(dat, pr, ...) {
     res_spat <-  1
   }
   
-if (("Date" %in% colnames(dat))==FALSE) {
-  stop("No Date column found in data. Please include a Date column in POSIXct format")
-}
-
+  if (("Date" %in% colnames(dat))==FALSE) {
+    stop("No Date column found in data. Please include a Date column in POSIXct format")
+  }
+  
   # If Day, Month, Year doesn't exist we create them
   if (sum(c("Day","Month","Year") %in% colnames(dat)) != 3) {   
     dat <- dat %>% 
@@ -92,15 +92,8 @@ if (("Date" %in% colnames(dat))==FALSE) {
         vr <- paste0(pr[j],"_mean_mean")
       }
       
-      if ((dat$Date[i] >= dmy("5,7,2002") & str_detect(pr[j],"1d")) || 
-          (dat$Date[i] >= dmy("5,7,2002") & str_detect(res_temp,"1d")) ||
-          (dat$Date[i] >= dmy("1,8,2002") & str_detect(res_temp,"1m")) ||
-          (dat$Date[i] >= dmy("1,1,2003") & dat$Date[i] <= dmy("31,12,2014") & str_detect(res_temp,"1y")) ||
-          (dat$Date[i] >= dmy("1,1,2003") & dat$Date[i] <= dmy("31,12,2014") & str_detect(res_temp,"1mNy")) ||
-          (dat$Date[i] >= dmy("1,1,2003") & dat$Date[i] <= dmy("31,12,2014") & str_detect(res_temp,"12mNy"))) { # MODIS is only available from 5/7/2002
-        
+      tryCatch({
         nc <- nc_open(imos_url, write=FALSE, readunlim=TRUE, verbose=FALSE)
-        
         # Approximate nearest neighbour
         idx_lon <- ann(as.matrix(nc$dim$lon$vals), as.matrix(dat$Longitude[i]), k = 1, verbose = FALSE)$knnIndexDist[,1]
         idx_lat <- ann(as.matrix(nc$dim$lat$vals), as.matrix(dat$Latitude[i]), k = 1, verbose = FALSE)$knnIndexDist[,1]
@@ -111,10 +104,15 @@ if (("Date" %in% colnames(dat))==FALSE) {
           cnt <- c(res_spat, res_spat, 1)
         }
         out <- ncvar_get(nc, vr, start=c(idx_lon, idx_lat, 1), count = cnt)
-        mat[i,j] <- mean(out,na.rm = TRUE)
-      } else {
-        print(paste0('Date (',dat$Day[i],'/',dat$Month[i],'/',dat$Year[i],') prior to MODIS launch'))
-      }
+        
+        print(out)
+        mat[i,j] <- mean(out, na.rm = TRUE)
+        
+      }, 
+      error = function(cond) {
+        print(paste0('Date (',dat$Day[i],'/',dat$Month[i],'/',dat$Year[i],') not available.'))
+        }
+      )
     }
     setTxtProgressBar(pb, i)
   }
