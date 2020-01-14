@@ -92,7 +92,8 @@ fIMOS_MatchMODIS <- function(dat, pr, ...) {
         vr <- paste0(pr[j],"_mean_mean")
       }
       
-      tryCatch({
+      
+      tryCatch({ # Not all dates will exist
         nc <- nc_open(imos_url, write=FALSE, readunlim=TRUE, verbose=FALSE)
         # Approximate nearest neighbour
         idx_lon <- ann(as.matrix(nc$dim$lon$vals), as.matrix(dat$Longitude[i]), k = 1, verbose = FALSE)$knnIndexDist[,1]
@@ -105,9 +106,7 @@ fIMOS_MatchMODIS <- function(dat, pr, ...) {
         }
         out <- ncvar_get(nc, vr, start=c(idx_lon, idx_lat, 1), count = cnt)
         
-        print(out)
         mat[i,j] <- mean(out, na.rm = TRUE)
-        
       }, 
       error = function(cond) {
         print(paste0('Date (',dat$Day[i],'/',dat$Month[i],'/',dat$Year[i],') not available.'))
