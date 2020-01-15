@@ -22,7 +22,7 @@ fIMOS_MatchAltimetry <- function(dat, ...) {
   library(lubridate) #install.packages("lubridate")
   
   dat <- dat %>% 
-    add_column(GSLA = NA, GSL = NA, UCUR = NA, VCUR = NA)
+    add_column(GSLA = NA, GSL = NA, UCUR = NA, VCUR = NA, Longitude_Actual = NA, Latitude_Actual = NA)
   
   if (!exists("res_spat")){
     print("Defaulting to 1 pixel x 1 pixel. Provide res_spat if you want to increase")
@@ -106,6 +106,9 @@ fIMOS_MatchAltimetry <- function(dat, ...) {
     dat$UCUR[i] <- mean(UCUR, na.rm = TRUE)
     VCUR <- ncvar_get(nc, "VCUR", start=c(idx_lon, idx_lat, idx_time), count = cnt)
     dat$VCUR[i] <- mean(VCUR, na.rm = TRUE) 
+    
+    dat$Longitude_Actual[i] <- nc$dim$LONGITUDE$vals[idx_lon]
+    dat$Latitude_Actual[i] <- nc$dim$LATITUDE$vals[idx_lat]
     
     setTxtProgressBar(pb, i)
   }
