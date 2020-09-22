@@ -1,10 +1,6 @@
 ## IMOS plankton data products
-## Claire Davies (CSIRO) and Jason D Everett (UQ/CSIRO)
-
-## Created: May 2020
-## Updated: 
-  ## 21 July 2020 (Written to Git)
-  ## 22 September 2020 (Updated data file structure)
+## claire
+## May 2020
 
 suppressPackageStartupMessages({
 library(tidyverse)
@@ -13,12 +9,10 @@ library(reshape)
 library(data.table)
 })
 
-rawD <- "RawData"
-outD <- "Output"
 ###################################################################################################################################################
 # CPR Phyto
 # Bring in all CPR phytoplankton samples
-cprPsamp <- read_csv(paste0(rawD,.Platform$file.sep,"PSampCPR.csv"), na = "(null)") %>% 
+cprPsamp <- read_csv("PSampCPR.csv", na = "(null)") %>% 
   dplyr::rename("Sample" = "SAMPLE", "Route" = "ROUTE", "Latitude" = "LATITUDE", "Longitude" = "LONGITUDE", "SampleDateUTC" = "SAMPLEDATEUTC") %>%
   mutate(Year = year(SampleDateUTC),
          Month = month(SampleDateUTC),
@@ -26,11 +20,11 @@ cprPsamp <- read_csv(paste0(rawD,.Platform$file.sep,"PSampCPR.csv"), na = "(null
          Time_24hr = str_sub(SampleDateUTC, -8, -1)) # hms doesn't seem to work on 00:00:00 times
 
 # Bring in plankton data
-cprPdat <- read_csv(paste0(rawD,.Platform$file.sep,"CPR_phyto_raw.csv"), na = "(null)") %>%
+cprPdat <- read_csv("CPR_phyto_raw.csv", na = "(null)") %>%
   dplyr::rename("Sample" = "SAMPLE", "TaxonName" = "TAXON_NAME", "TaxonGroup" = "TAXON_GROUP", "Genus" = "GENUS", "Species" = "SPECIES", "PAbun_m3" = "PHYTO_ABUNDANCE_M3")
 
 # Bring in Change Log
-cprPcl <- read_csv(paste0(rawD,.Platform$file.sep,"ChangeLogCPRP.csv"), na = "(null)") %>%
+cprPcl <- read_csv("ChangeLogCPRP.csv", na = "(null)") %>%
   dplyr::rename("TaxonName" = "TAXON_NAME", "StartDate" = "START_DATE", "ParentName" = "PARENT_NAME")
 
 ######################################################################################################################################################
@@ -42,7 +36,7 @@ cprRawP <- cprRawP1 %>% pivot_wider(names_from = TaxonName, values_from = PAbun_
   arrange(desc(SampleDateUTC)) %>%
   select(-'No taxa found')
 
-fwrite(cprRawP, file = paste0(outD,.Platform$file.sep,"CPR_phyto_raw_mat.csv"), row.names = FALSE)
+fwrite(cprRawP, file = "CPR_phyto_raw_mat.csv", row.names = FALSE)
 
 ## CPR PHYTO HTG
 
@@ -54,7 +48,7 @@ cprHTGP1 <-  cprPsamp %>% left_join(cprHTGP1, by = "Sample") %>%
 cprHTGP <-  cprHTGP1 %>% pivot_wider(names_from = TaxonGroup, values_from = PAbun_m3, values_fill = list(PAbun_m3 = 0)) %>% 
   arrange(desc(SampleDateUTC)) 
 
-fwrite(cprHTGP[,-1], file = paste0(outD,.Platform$file.sep,"CPR_phyto_HTG_mat.csv"), row.names = FALSE)
+fwrite(cprHTGP[,-1], file = "CPR_phyto_HTG_mat.csv", row.names = FALSE)
 
 ## CPR PHYTO GENUS
 
@@ -102,7 +96,7 @@ cprGenP1 <- cprGenP1 %>% group_by(Route, Latitude, Longitude, SampleDateUTC, Yea
 cprGenP <-  cprGenP1 %>% pivot_wider(names_from = Genus, values_from = PAbun_m3, values_fill = list(PAbun_m3 = 0)) %>% 
   arrange(desc(SampleDateUTC)) 
 
-fwrite(cprGenP, file = paste0(outD,.Platform$file.sep,"CPR_phyto_genus_mat.csv"), row.names = FALSE)
+fwrite(cprGenP, file = "CPR_phyto_genus_mat.csv", row.names = FALSE)
 
 ## CPR PHYTO SPECIES
 
@@ -151,12 +145,12 @@ cprSpecP1 <- cprSpecP1 %>% group_by(Route, Latitude, Longitude, SampleDateUTC, Y
 cprSpecP <-  cprSpecP1 %>% pivot_wider(names_from = TaxonName, values_from = PAbun_m3, values_fill = list(PAbun_m3 = 0)) %>% 
   arrange(desc(SampleDateUTC)) 
 
-fwrite(cprSpecP, file = paste0(outD,.Platform$file.sep,"CPR_phyto_species_mat.csv"), row.names = FALSE)
+fwrite(cprSpecP, file = "CPR_phyto_species_mat.csv", row.names = FALSE)
 
 ################################################################################################################################
 # CPR Zoop
 # Bring in all CPR phytoplankton samples
-cprZsamp <- read_csv(paste0(rawD,.Platform$file.sep,"ZSampCPR.csv"), na = "(null)") %>% 
+cprZsamp <- read_csv("ZSampCPR.csv", na = "(null)") %>% 
   dplyr::rename("Sample" = "SAMPLE", "Route" = "ROUTE", "Latitude" = "LATITUDE", "Longitude" = "LONGITUDE", "SampleDateUTC" = "SAMPLEDATEUTC") %>%
   mutate(Year = year(SampleDateUTC),
          Month = month(SampleDateUTC),
@@ -164,12 +158,12 @@ cprZsamp <- read_csv(paste0(rawD,.Platform$file.sep,"ZSampCPR.csv"), na = "(null
          Time_24hr = str_sub(SampleDateUTC, -8, -1)) # hms doesn't seem to work on 00:00:00 times
 
 # Bring in plankton data
-cprZdat <- read_csv(paste0(rawD,.Platform$file.sep,"CPR_zoo_raw.csv"), na = "(null)") %>%
+cprZdat <- read_csv("CPR_zoo_raw.csv", na = "(null)") %>%
   dplyr::rename("Sample" = "SAMPLE", "TaxonName" = "TAXON_NAME", "Copepod" = "TAXON_GROUP", "TaxonGroup" = "TAXON_GRP01",
                 "Genus" = "GENUS", "Species" = "SPECIES", "ZAbun_m3" = "ZOOP_ABUNDANCE_M3")
 
 # Bring in Change Log
-cprZcl <- read_csv(paste0(rawD,.Platform$file.sep,"ChangeLogCPRZ.csv"), na = "(null)") %>%
+cprZcl <- read_csv("ChangeLogCPRZ.csv", na = "(null)") %>%
   dplyr::rename("TaxonName" = "TAXON_NAME", "StartDate" = "START_DATE", "ParentName" = "PARENT_NAME")
 
 ######################################################################################################################################################
@@ -181,7 +175,7 @@ cprRawZ <- cprRawZ1 %>% pivot_wider(names_from = TaxonName, values_from = ZAbun_
   arrange(desc(SampleDateUTC))  %>%
   select(-'No taxa found')
 
-fwrite(cprRawZ, file = paste0(outD,.Platform$file.sep,"CPR_zoop_raw_mat.csv"), row.names = FALSE)
+fwrite(cprRawZ, file = "CPR_zoop_raw_mat.csv", row.names = FALSE)
 
 ## CPR ZOOP HTG
 
@@ -193,7 +187,7 @@ cprHTGZ1 <-  cprZsamp %>% left_join(cprHTGZ1, by = "Sample") %>%
 cprHTGZ <-  cprHTGZ1 %>% pivot_wider(names_from = TaxonGroup, values_from = ZAbun_m3, values_fill = list(ZAbun_m3 = 0)) %>% 
   arrange(desc(SampleDateUTC)) 
 
-fwrite(cprHTGZ[,-1], file = paste0(outD,.Platform$file.sep,"CPR_zoop_HTG_mat.csv"), row.names = FALSE)
+fwrite(cprHTGZ[,-1], file = "CPR_zoop_HTG_mat.csv", row.names = FALSE)
 
 ## CPR ZOOP GENUS
 
@@ -241,7 +235,7 @@ cprGenZ1 <- cprGenZ1 %>% group_by(Route, Latitude, Longitude, SampleDateUTC, Yea
 cprGenZ <-  cprGenZ1 %>% pivot_wider(names_from = Genus, values_from = ZAbun_m3, values_fill = list(ZAbun_m3 = 0)) %>% 
   arrange(desc(SampleDateUTC)) 
 
-fwrite(cprGenZ, file = paste0(outD,.Platform$file.sep,"CPR_zoop_genus_mat.csv"), row.names = FALSE)
+fwrite(cprGenZ, file = "CPR_zoop_genus_mat.csv", row.names = FALSE)
 
 ## CPR ZOOP COPEPODS
 
@@ -292,7 +286,7 @@ cprCop1 <- cprCop1 %>% group_by(Route, Latitude, Longitude, SampleDateUTC, Year,
 cprCop <-  cprCop1 %>% pivot_wider(names_from = Species, values_from = ZAbun_m3, values_fill = list(ZAbun_m3 = 0)) %>% 
   arrange(desc(SampleDateUTC)) 
 
-fwrite(cprCop, file = paste0(outD,.Platform$file.sep,"CPR_zoop_copes_mat.csv"), row.names = FALSE)
+fwrite(cprCop, file = "CPR_zoop_copes_mat.csv", row.names = FALSE)
 
 ## CPR ZOOP NON-COPEPODS
 
@@ -303,7 +297,6 @@ cprnCop1 <- cprZdat %>% filter(!TaxonName %in% levels(as.factor(clc$TaxonName)) 
   mutate(Species = paste0(Genus," ", word(Species,1))) %>% # bin complexes
   group_by(Sample, Species) %>% 
   summarise(ZAbun_m3 = sum(ZAbun_m3, na.rm = TRUE))
-
 cprnCop1 <- cprZsamp %>% left_join(cprnCop1, by = "Sample") %>% 
   mutate(StartDate = ymd("2007-12-19"),
          Species = ifelse(is.na(Species), 'Evadne spinifera', Species),
@@ -340,35 +333,35 @@ cprnCop1 <- cprnCop1 %>% group_by(Route, Latitude, Longitude, SampleDateUTC, Yea
 cprnCop <-  cprnCop1 %>% pivot_wider(names_from = Species, values_from = ZAbun_m3, values_fill = list(ZAbun_m3 = 0)) %>% 
   arrange(desc(SampleDateUTC)) 
 
-fwrite(cprnCop, file = paste0(outD,.Platform$file.sep,"CPR_zoop_noncopes_mat.csv"), row.names = FALSE)
+fwrite(cprnCop, file = "CPR_zoop_noncopes_mat.csv", row.names = FALSE)
 
 #################################################################################################################################
 # NRS Phyto
 # Bring in all NRS phytoplankton samples
-NRSPsamp <- read_csv(paste0(rawD,.Platform$file.sep,"PSampNRS.csv"), na = "(null)") %>% 
-  dplyr::rename("Sample" = "SAMPLE", "Station" = "STATION", "Latitude" = "LATITUDE", "Longitude" = "LONGITUDE", "SampleDateLocal" = "SAMPLEDATE") %>%
+NRSPsamp <- read_csv("PSampNRS.csv", na = "(null)") %>% 
+  dplyr::rename("Sample" = "SAMPLE", "Station" = "STATION", "Latitude" = "LATITUDE", "Longitude" = "LONGITUDE", "SampleDateLocal" = "SAMPLEDATE", "NRScode" = "NRS_CODE") %>%
   mutate(Year = year(SampleDateLocal),
          Month = month(SampleDateLocal),
          Day = day(SampleDateLocal),
          Time_24hr = str_sub(SampleDateLocal, -8, -1)) # hms doesn't seem to work on 00:00:00 times
 
 # Bring in plankton data
-NRSPdat <- read_csv(paste0(rawD,.Platform$file.sep,"NRS_phyto_raw.csv"), na = "(null)") %>%
+NRSPdat <- read_csv("NRS_phyto_raw.csv", na = "(null)") %>%
   dplyr::rename("Sample" = "SAMPLE", "TaxonName" = "TAXON_NAME", "TaxonGroup" = "TAXON_GROUP", "Genus" = "GENUS", "Species" = "SPECIES", 
                 "Cells_L" = "CELL_PER_LITRE", "Biovolume_uM3_L" = "BIOVOLUME_UM3_PER_L")
 
 # Bring in Change Log
-NRSPcl <- read_csv(paste0(rawD,.Platform$file.sep,"ChangeLogNRSP.csv"), na = "(null)") %>%
+NRSPcl <- read_csv("ChangeLogNRSP.csv", na = "(null)") %>%
   dplyr::rename("TaxonName" = "TAXON_NAME", "StartDate" = "START_DATE", "ParentName" = "PARENT_NAME")
 
 ##################################################################################################################################
 ## NRS PHYTO RAW
 
-NRSRawP1 <- left_join(NRSPsamp, NRSPdat, by = "Sample") %>% select(c(1:10,14)) %>% arrange(-desc(TaxonName)) 
+NRSRawP1 <- left_join(NRSPsamp, NRSPdat, by = "Sample") %>% select(c(1:11,15)) %>% arrange(-desc(TaxonName)) 
 NRSRawP <- NRSRawP1 %>% pivot_wider(names_from = TaxonName, values_from = Cells_L, values_fill = list(Cells_L = 0)) %>% 
   arrange(desc(SampleDateLocal)) 
 
-fwrite(NRSRawP, file = paste0(outD,.Platform$file.sep,"NRS_phyto_raw_mat.csv"), row.names = FALSE)
+fwrite(NRSRawP, file = "NRS_phyto_raw_mat.csv", row.names = FALSE)
 
 ## NRS PHYTO HTG
 
@@ -380,7 +373,7 @@ NRSHTGP1 <-  NRSPsamp %>% left_join(NRSHTGP1, by = "Sample") %>%
 NRSHTGP <-  NRSHTGP1 %>% pivot_wider(names_from = TaxonGroup, values_from = Cells_L, values_fill = list(Cells_L = 0)) %>% 
   arrange(desc(SampleDateLocal)) 
 
-fwrite(cprHTGP[,-1], file = paste0(outD,.Platform$file.sep,"NRS_phyto_HTG_mat.csv"), row.names = FALSE)
+fwrite(NRSHTGP[,-1], file = "NRS_phyto_HTG_mat.csv", row.names = FALSE)
 
 ## NRS PHYTO GENUS
 
@@ -398,7 +391,7 @@ NRSGenP1 <- NRSPsamp %>% left_join(NRSGenP1, by = "Sample") %>%
   mutate(StartDate = ymd("2007-12-19"),
          Genus = ifelse(is.na(Genus), 'Acanthoica', Genus),
          Cells_L = ifelse(is.na(Cells_L), 0, Cells_L))  %>% 
-  group_by(Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
+  group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
   summarise(Cells_L = sum(Cells_L)) %>% as.data.frame()
 
 # add change log species with -999 for NA's and real absences as 0's
@@ -416,19 +409,19 @@ for (i in 1:nlevels(NRSGenP2$Genus)) {
            Genus = replace(Genus, is.na(Genus), Dates$Genus),
            Cells_L = replace(Cells_L, StartDate>SampleDateLocal, -999), 
            Cells_L = replace(Cells_L, StartDate<SampleDateLocal & is.na(Cells_L), 0)) %>% 
-    group_by(Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
+    group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
     summarise(Cells_L = sum(Cells_L)) %>% as.data.frame()     
   NRSGenP1 <- rbind(NRSGenP1, gen)
 }
 
-NRSGenP1 <- NRSGenP1 %>% group_by(Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
+NRSGenP1 <- NRSGenP1 %>% group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
   summarise(Cells_L = max(Cells_L)) %>% arrange(-desc(Genus)) %>% as.data.frame() 
 # select maximum value of duplicates, but leave -999 for all other occurences as not regularly identified
 
 NRSGenP <-  NRSGenP1 %>% pivot_wider(names_from = Genus, values_from = Cells_L, values_fill = list(Cells_L = 0)) %>% 
   arrange(desc(SampleDateLocal)) 
 
-fwrite(NRSGenP, file = paste0(outD,.Platform$file.sep,"NRS_phyto_genus_mat.csv"), row.names = FALSE)
+fwrite(NRSGenP, file = "NRS_phyto_genus_mat.csv", row.names = FALSE)
 
 ## NRS PHYTO SPECIES
 
@@ -446,7 +439,7 @@ NRSSpecP1 <- NRSPsamp %>% left_join(NRSSpecP1, by = "Sample") %>%
   mutate(StartDate = ymd("2007-12-19"),
          TaxonName = ifelse(is.na(TaxonName), 'Paralia sulcata', TaxonName),
          Cells_L = ifelse(is.na(Cells_L), 0, Cells_L))  %>% 
-  group_by(Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, TaxonName) %>%
+  group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, TaxonName) %>%
   summarise(Cells_L = sum(Cells_L)) %>% as.data.frame()
 
 # add change log species with -999 for NA's and real absences as 0's
@@ -465,47 +458,47 @@ for (i in 1:nlevels(NRSSpecP2$TaxonName)) {
            TaxonName = replace(TaxonName, is.na(TaxonName), Dates$TaxonName),
            Cells_L = replace(Cells_L, StartDate>SampleDateLocal, -999), 
            Cells_L = replace(Cells_L, StartDate<SampleDateLocal & is.na(Cells_L), 0)) %>% 
-    group_by(Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, TaxonName) %>%
+    group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, TaxonName) %>%
     summarise(Cells_L = sum(Cells_L)) %>% as.data.frame()     
   NRSSpecP1 <- rbind(NRSSpecP1, spec)
 }
 
-NRSSpecP1 <- NRSSpecP1 %>% group_by(Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, TaxonName) %>%
+NRSSpecP1 <- NRSSpecP1 %>% group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, TaxonName) %>%
   summarise(Cells_L = max(Cells_L)) %>% arrange(-desc(TaxonName)) %>% as.data.frame() 
 # select maximum value of duplicates, but leave -999 for all other occurences as not regularly identified
 
 NRSSpecP <-  NRSSpecP1 %>% pivot_wider(names_from = TaxonName, values_from = Cells_L, values_fill = list(Cells_L = 0)) %>% 
   arrange(desc(SampleDateLocal)) 
 
-fwrite(NRSSpecP, file = paste0(outD,.Platform$file.sep,"NRS_phyto_species_mat.csv"), row.names = FALSE)
+fwrite(NRSSpecP, file = "NRS_phyto_species_mat.csv", row.names = FALSE)
 
 #################################################################################################################################
 # NRS Zoop
 # Bring in all NRS phytoplankton samples
-NRSZsamp <- read_csv(paste0(rawD,.Platform$file.sep,"ZSampNRS.csv"), na = "(null)") %>% 
-  dplyr::rename("Sample" = "SAMPLE", "Station" = "STATION", "Latitude" = "LATITUDE", "Longitude" = "LONGITUDE", "SampleDateLocal" = "SAMPLEDATE") %>%
+NRSZsamp <- read_csv("ZSampNRS.csv", na = "(null)") %>% 
+  dplyr::rename("Sample" = "SAMPLE", "Station" = "STATION", "Latitude" = "LATITUDE", "Longitude" = "LONGITUDE", "SampleDateLocal" = "SAMPLEDATE", "NRScode" = "NRS_CODE") %>%
   mutate(Year = year(SampleDateLocal),
          Month = month(SampleDateLocal),
          Day = day(SampleDateLocal),
          Time_24hr = str_sub(SampleDateLocal, -8, -1)) # hms doesn't seem to work on 00:00:00 times
 
 # Bring in plankton data
-NRSZdat <- read_csv(paste0(rawD,.Platform$file.sep,"NRS_zoop_raw.csv"), na = "(null)") %>%
+NRSZdat <- read_csv("NRS_zoop_raw.csv", na = "(null)") %>%
   dplyr::rename("Sample" = "SAMPLE", "TaxonName" = "TAXON_NAME", "Copepod" = "TAXON_GROUP", "TaxonGroup" = "TAXON_GRP01", 
                 "Genus" = "GENUS", "Species" = "SPECIES", "ZAbund_m3" = "TAXON_PER_M3")
 
 # Bring in Change Log
-NRSZcl <- read_csv(paste0(rawD,.Platform$file.sep,"ChangeLogNRSZ.csv"), na = "(null)") %>%
+NRSZcl <- read_csv("ChangeLogNRSZ.csv", na = "(null)") %>%
   dplyr::rename("TaxonName" = "TAXON_NAME", "StartDate" = "START_DATE", "ParentName" = "PARENT_NAME")
 
 ##################################################################################################################################
 ## NRS ZOOP RAW
 
-NRSRawZ1 <- left_join(NRSZsamp, NRSZdat, by = "Sample") %>% select(c(2:10,15)) %>% arrange(-desc(TaxonName)) 
+NRSRawZ1 <- left_join(NRSZsamp, NRSZdat, by = "Sample") %>% select(c(1,3:11,16)) %>% arrange(-desc(TaxonName)) 
 NRSRawZ <- NRSRawZ1 %>% pivot_wider(names_from = TaxonName, values_from = ZAbund_m3, values_fill = list(ZAbund_m3 = 0)) %>% 
   arrange(desc(SampleDateLocal)) 
 
-fwrite(NRSRawP, file = paste0(outD,.Platform$file.sep,"NRS_zoop_raw_mat.csv"), row.names = FALSE)
+fwrite(NRSRawP, file = "NRS_zoop_raw_mat.csv", row.names = FALSE)
 
 ## NRS ZOOP HTG
 
@@ -517,7 +510,7 @@ nrsHTGZ1 <-  NRSZsamp %>% left_join(nrsHTGZ1, by = "Sample") %>%
 nrsHTGZ <-  nrsHTGZ1 %>% pivot_wider(names_from = TaxonGroup, values_from = ZAbund_m3, values_fill = list(ZAbund_m3 = 0)) %>% 
   arrange(desc(SampleDateLocal)) 
 
-fwrite(nrsHTGZ[,-1], file = paste0(outD,.Platform$file.sep,"NRS_zoop_HTG_mat.csv"), row.names = FALSE)
+fwrite(nrsHTGZ[,-1], file = "NRS_zoop_HTG_mat.csv", row.names = FALSE)
 
 ## NRS ZOOP GENUS
 
@@ -535,7 +528,7 @@ NRSGenZ1 <- NRSZsamp %>% left_join(NRSGenZ1, by = "Sample") %>%
   mutate(StartDate = ymd("2007-12-19"),
          Genus = ifelse(is.na(Genus), 'Acanthoica', word(Genus,1)), # bin subgenera together
          ZAbund_m3 = ifelse(is.na(ZAbund_m3), 0, ZAbund_m3))  %>% 
-  group_by(Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
+  group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
   summarise(ZAbund_m3 = sum(ZAbund_m3)) %>% as.data.frame()
 
 # add change log species with -999 for NA's and real absences as 0's
@@ -553,19 +546,19 @@ for (i in 1:nlevels(NRSGenP2$Genus)) {
            Genus = replace(Genus, is.na(Genus), Dates$Genus),
            ZAbund_m3 = replace(ZAbund_m3, StartDate>SampleDateLocal, -999), 
            ZAbund_m3 = replace(ZAbund_m3, StartDate<SampleDateLocal & is.na(ZAbund_m3), 0)) %>% 
-    group_by(Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
+    group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
     summarise(ZAbund_m3 = sum(ZAbund_m3)) %>% as.data.frame()     
   NRSGenZ1 <- rbind(NRSGenZ1, gen)
 }
 
-NRSGenZ1 <- NRSGenZ1 %>% group_by(Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
+NRSGenZ1 <- NRSGenZ1 %>% group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
   summarise(ZAbund_m3 = max(ZAbund_m3)) %>% arrange(-desc(Genus)) %>% as.data.frame() 
 # select maximum value of duplicates, but leave -999 for all other occurences as not regularly identified
 
 NRSGenZ <-  NRSGenZ1 %>% pivot_wider(names_from = Genus, values_from = ZAbund_m3, values_fill = list(ZAbund_m3 = 0)) %>% 
   arrange(desc(SampleDateLocal)) 
 
-fwrite(NRSGenZ, file = paste0(outD,.Platform$file.sep,"NRS_zoop_genus_mat.csv"), row.names = FALSE)
+fwrite(NRSGenZ, file = "NRS_zoop_genus_mat.csv", row.names = FALSE)
 
 ## NRS ZOOP COPEPODS
 
@@ -584,7 +577,7 @@ NRSCop1 <- NRSZsamp %>% left_join(NRSCop1, by = "Sample") %>%
   mutate(StartDate = ymd("2007-12-19"),
          Species = ifelse(is.na(Species), 'Calanus Australis', Species), # avoids nulls in pivot
          ZAbund_m3 = ifelse(is.na(ZAbund_m3), 0, ZAbund_m3))  %>%  # avoids nulls in pivot
-  group_by(Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Species) %>%
+  group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Species) %>%
   summarise(ZAbund_m3 = sum(ZAbund_m3)) %>% as.data.frame()
 
 # add change log species with -999 for NA's and real absences as 0's
@@ -604,19 +597,19 @@ for (i in 1:nlevels(NRSCop2$Species)) {
            Species = replace(Species, is.na(Species), Dates$Species),
            ZAbund_m3 = replace(ZAbund_m3, StartDate>SampleDateLocal, -999), 
            ZAbund_m3 = replace(ZAbund_m3, StartDate<SampleDateLocal & is.na(ZAbund_m3), 0)) %>% 
-    group_by(Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Species) %>%
+    group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Species) %>%
     summarise(ZAbund_m3 = sum(ZAbund_m3)) %>% as.data.frame()     
   NRSCop1 <- rbind(NRSCop1, copes)
 }
 
-NRSCop1 <- NRSCop1 %>% group_by(Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Species) %>%
+NRSCop1 <- NRSCop1 %>% group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Species) %>%
   summarise(ZAbund_m3 = max(ZAbund_m3)) %>% arrange(-desc(Species)) %>% as.data.frame() 
 # select maximum value of duplicates, but leave -999 for all other occurences as not regularly identified
 
 NRSCop <-  NRSCop1 %>% pivot_wider(names_from = Species, values_from = ZAbund_m3, values_fill = list(ZAbund_m3 = 0)) %>% 
   arrange(desc(SampleDateLocal)) 
 
-fwrite(NRSCop, file = paste0(outD,.Platform$file.sep,"NRS_zoop_copes_mat.csv"), row.names = FALSE)
+fwrite(NRSCop, file = "NRS_zoop_copes_mat.csv", row.names = FALSE)
 
 ## NRS ZOOP NON-COPEPODS
 
@@ -631,7 +624,7 @@ NRSnCop1 <- NRSZsamp %>% left_join(NRSnCop1, by = "Sample") %>%
   mutate(StartDate = ymd("2007-12-19"),
          Species = ifelse(is.na(Species), 'Calanus Australis', Species), # avoids nulls in pivot
          ZAbund_m3 = ifelse(is.na(ZAbund_m3), 0, ZAbund_m3))  %>%  # avoids nulls in pivot
-  group_by(Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Species) %>%
+  group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Species) %>%
   summarise(ZAbund_m3 = sum(ZAbund_m3)) %>% as.data.frame()
 
 # add change log species with -999 for NA's and real absences as 0's
@@ -651,21 +644,31 @@ for (i in 1:nlevels(NRSnCop2$Species)) {
            Species = replace(Species, is.na(Species), Dates$Species),
            ZAbund_m3 = replace(ZAbund_m3, StartDate>SampleDateLocal, -999), 
            ZAbund_m3 = replace(ZAbund_m3, StartDate<SampleDateLocal & is.na(ZAbund_m3), 0)) %>% 
-    group_by(Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Species) %>%
+    group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Species) %>%
     summarise(ZAbund_m3 = sum(ZAbund_m3)) %>% as.data.frame()     
   NRSnCop1 <- rbind(NRSnCop1, ncopes)
 }
 
-NRSnCop1 <- NRSnCop1 %>% group_by(Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Species) %>%
+NRSnCop1 <- NRSnCop1 %>% group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Species) %>%
   summarise(ZAbund_m3 = max(ZAbund_m3)) %>% arrange(-desc(Species)) %>% as.data.frame() 
 # select maximum value of duplicates, but leave -999 for all other occurences as not regularly identified
 
 NRSnCop <-  NRSnCop1 %>% pivot_wider(names_from = Species, values_from = ZAbund_m3, values_fill = list(ZAbund_m3 = 0)) %>% 
   arrange(desc(SampleDateLocal)) 
 
-fwrite(NRSnCop, file = paste0(outD,.Platform$file.sep,"NRS_zoop_noncopes_mat.csv"), row.names = FALSE)
+fwrite(NRSnCop, file = "NRS_zoop_noncopes_mat.csv", row.names = FALSE)
 
 
 #################################################################################################################################
+
+
+
+
+
+
+
+
+
+
 
 
