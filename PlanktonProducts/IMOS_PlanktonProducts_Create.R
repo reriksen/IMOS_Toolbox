@@ -9,8 +9,7 @@ library(reshape)
 library(data.table)
 })
 
-###################################################################################################################################################
-# CPR Phyto
+#### CPR Phytoplankton #######################################################################################################################################################
 # Bring in all CPR phytoplankton samples
 cprPsamp <- read_csv("PSampCPR.csv", na = "(null)") %>% 
   dplyr::rename("Sample" = "SAMPLE", "Route" = "ROUTE", "Latitude" = "LATITUDE", "Longitude" = "LONGITUDE", "SampleDateUTC" = "SAMPLEDATEUTC") %>%
@@ -27,8 +26,7 @@ cprPdat <- read_csv("CPR_phyto_raw.csv", na = "(null)") %>%
 cprPcl <- read_csv("ChangeLogCPRP.csv", na = "(null)") %>%
   dplyr::rename("TaxonName" = "TAXON_NAME", "StartDate" = "START_DATE", "ParentName" = "PARENT_NAME")
 
-######################################################################################################################################################
-##CPR PHYTO RAW
+#### CPR PHYTO RAW ####
 
 cprRawP1 <- left_join(cprPsamp, cprPdat, by = "Sample") %>% select(c(2:10,14)) %>% arrange(-desc(TaxonName)) %>%
   mutate(TaxonName = ifelse(is.na(TaxonName), 'No taxa found', TaxonName)) # for segments where no phyto was found
@@ -38,7 +36,7 @@ cprRawP <- cprRawP1 %>% pivot_wider(names_from = TaxonName, values_from = PAbun_
 
 fwrite(cprRawP, file = "CPR_phyto_raw_mat.csv", row.names = FALSE)
 
-## CPR PHYTO HTG
+#### CPR PHYTO HTG ####
 
 cprHTGP1 <- cprPdat %>% group_by(Sample, TaxonGroup) %>% summarise(PAbun_m3 = sum(PAbun_m3, na.rm = TRUE)) %>%
   filter(!TaxonGroup %in% c('Other','Coccolithophore', 'Diatom','Protozoa')) 
@@ -50,7 +48,7 @@ cprHTGP <-  cprHTGP1 %>% pivot_wider(names_from = TaxonGroup, values_from = PAbu
 
 fwrite(cprHTGP[,-1], file = "CPR_phyto_HTG_mat.csv", row.names = FALSE)
 
-## CPR PHYTO GENUS
+#### CPR PHYTO GENUS ####
 
 # Check genus are effected by change log
 clg <- cprPcl %>% mutate(genus1 = word(TaxonName, 1),
@@ -98,7 +96,7 @@ cprGenP <-  cprGenP1 %>% pivot_wider(names_from = Genus, values_from = PAbun_m3,
 
 fwrite(cprGenP, file = "CPR_phyto_genus_mat.csv", row.names = FALSE)
 
-## CPR PHYTO SPECIES
+#### CPR PHYTO SPECIES ####
 
 # Check at what level we need change log
 cls <- cprPcl %>% mutate(same = ifelse(TaxonName == ParentName, "yes", "no")) %>%
@@ -147,8 +145,7 @@ cprSpecP <-  cprSpecP1 %>% pivot_wider(names_from = TaxonName, values_from = PAb
 
 fwrite(cprSpecP, file = "CPR_phyto_species_mat.csv", row.names = FALSE)
 
-################################################################################################################################
-# CPR Zoop
+#### CPR Zoopplankton #### ################################################################################################################################
 # Bring in all CPR phytoplankton samples
 cprZsamp <- read_csv("ZSampCPR.csv", na = "(null)") %>% 
   dplyr::rename("Sample" = "SAMPLE", "Route" = "ROUTE", "Latitude" = "LATITUDE", "Longitude" = "LONGITUDE", "SampleDateUTC" = "SAMPLEDATEUTC") %>%
@@ -166,8 +163,7 @@ cprZdat <- read_csv("CPR_zoo_raw.csv", na = "(null)") %>%
 cprZcl <- read_csv("ChangeLogCPRZ.csv", na = "(null)") %>%
   dplyr::rename("TaxonName" = "TAXON_NAME", "StartDate" = "START_DATE", "ParentName" = "PARENT_NAME")
 
-######################################################################################################################################################
-##CPR ZOOP RAW
+#### CPR ZOOP RAW ####
 
 cprRawZ1 <- left_join(cprZsamp, cprZdat, by = "Sample") %>% select(c(2:10,15)) %>% arrange(-desc(TaxonName)) %>%
   mutate(TaxonName = ifelse(is.na(TaxonName), 'No taxa found', TaxonName))
@@ -177,7 +173,7 @@ cprRawZ <- cprRawZ1 %>% pivot_wider(names_from = TaxonName, values_from = ZAbun_
 
 fwrite(cprRawZ, file = "CPR_zoop_raw_mat.csv", row.names = FALSE)
 
-## CPR ZOOP HTG
+#### CPR ZOOP HTG ####
 
 cprHTGZ1 <- cprZdat %>% group_by(Sample, TaxonGroup) %>% summarise(ZAbun_m3 = sum(ZAbun_m3, na.rm = TRUE)) %>%
   filter(!TaxonGroup %in% c('Other')) 
@@ -189,7 +185,7 @@ cprHTGZ <-  cprHTGZ1 %>% pivot_wider(names_from = TaxonGroup, values_from = ZAbu
 
 fwrite(cprHTGZ[,-1], file = "CPR_zoop_HTG_mat.csv", row.names = FALSE)
 
-## CPR ZOOP GENUS
+#### CPR ZOOP GENUS ####
 
 # Check genus are effected by change log
 clgz <- cprZcl %>% mutate(genus1 = word(TaxonName, 1),
@@ -237,7 +233,7 @@ cprGenZ <-  cprGenZ1 %>% pivot_wider(names_from = Genus, values_from = ZAbun_m3,
 
 fwrite(cprGenZ, file = "CPR_zoop_genus_mat.csv", row.names = FALSE)
 
-## CPR ZOOP COPEPODS
+#### CPR ZOOP COPEPODS ####
 
 # Check at what level we need change log
 clc <- cprZcl %>% mutate(same = ifelse(TaxonName == ParentName, "yes", "no")) %>%
@@ -288,9 +284,9 @@ cprCop <-  cprCop1 %>% pivot_wider(names_from = Species, values_from = ZAbun_m3,
 
 fwrite(cprCop, file = "CPR_zoop_copes_mat.csv", row.names = FALSE)
 
-## CPR ZOOP NON-COPEPODS
+#### CPR ZOOP NON-COPEPODS ####
 
-# for non change log species
+# for non change logspecies
 
 cprnCop1 <- cprZdat %>% filter(!TaxonName %in% levels(as.factor(clc$TaxonName)) & Copepod !='COPEPOD'
                               & Species != 'spp.' & !is.na(Species) & !grepl("cf.", Species) & !grepl("grp", Species)) %>% 
@@ -335,8 +331,8 @@ cprnCop <-  cprnCop1 %>% pivot_wider(names_from = Species, values_from = ZAbun_m
 
 fwrite(cprnCop, file = "CPR_zoop_noncopes_mat.csv", row.names = FALSE)
 
-#################################################################################################################################
-# NRS Phyto
+#### NRS Phytoplankton #### #################################################################################################################################
+
 # Bring in all NRS phytoplankton samples
 NRSPsamp <- read_csv("PSampNRS.csv", na = "(null)") %>% 
   dplyr::rename("Sample" = "SAMPLE", "Station" = "STATION", "Latitude" = "LATITUDE", "Longitude" = "LONGITUDE", "SampleDateLocal" = "SAMPLEDATE", "NRScode" = "NRS_CODE") %>%
@@ -354,8 +350,7 @@ NRSPdat <- read_csv("NRS_phyto_raw.csv", na = "(null)") %>%
 NRSPcl <- read_csv("ChangeLogNRSP.csv", na = "(null)") %>%
   dplyr::rename("TaxonName" = "TAXON_NAME", "StartDate" = "START_DATE", "ParentName" = "PARENT_NAME")
 
-##################################################################################################################################
-## NRS PHYTO RAW
+#### NRS PHYTO RAW ####
 
 NRSRawP1 <- left_join(NRSPsamp, NRSPdat, by = "Sample") %>% select(c(1:11,15)) %>% arrange(-desc(TaxonName)) 
 NRSRawP <- NRSRawP1 %>% pivot_wider(names_from = TaxonName, values_from = Cells_L, values_fill = list(Cells_L = 0)) %>% 
@@ -363,7 +358,7 @@ NRSRawP <- NRSRawP1 %>% pivot_wider(names_from = TaxonName, values_from = Cells_
 
 fwrite(NRSRawP, file = "NRS_phyto_raw_mat.csv", row.names = FALSE)
 
-## NRS PHYTO HTG
+#### NRS PHYTO HTG ####
 
 NRSHTGP1 <- NRSPdat %>% group_by(Sample, TaxonGroup) %>% summarise(Cells_L = sum(Cells_L, na.rm = TRUE)) %>%
   filter(!TaxonGroup %in% c('Other','Coccolithophore', 'Diatom','Protozoa')) 
@@ -375,7 +370,7 @@ NRSHTGP <-  NRSHTGP1 %>% pivot_wider(names_from = TaxonGroup, values_from = Cell
 
 fwrite(NRSHTGP[,-1], file = "NRS_phyto_HTG_mat.csv", row.names = FALSE)
 
-## NRS PHYTO GENUS
+#### NRS PHYTO GENUS ####
 
 # Check genus are effected by change log
 nrslg <- NRSPcl %>% mutate(genus1 = word(TaxonName, 1),
@@ -423,7 +418,7 @@ NRSGenP <-  NRSGenP1 %>% pivot_wider(names_from = Genus, values_from = Cells_L, 
 
 fwrite(NRSGenP, file = "NRS_phyto_genus_mat.csv", row.names = FALSE)
 
-## NRS PHYTO SPECIES
+#### NRS PHYTO SPECIES ####
 
 # Check at what level we need change log
 nrsls <- NRSPcl %>% mutate(same = ifelse(TaxonName == ParentName, "yes", "no")) %>%
@@ -472,8 +467,7 @@ NRSSpecP <-  NRSSpecP1 %>% pivot_wider(names_from = TaxonName, values_from = Cel
 
 fwrite(NRSSpecP, file = "NRS_phyto_species_mat.csv", row.names = FALSE)
 
-#################################################################################################################################
-# NRS Zoop
+#### NRS Zooplankton #### #################################################################################################################################
 # Bring in all NRS phytoplankton samples
 NRSZsamp <- read_csv("ZSampNRS.csv", na = "(null)") %>% 
   dplyr::rename("Sample" = "SAMPLE", "Station" = "STATION", "Latitude" = "LATITUDE", "Longitude" = "LONGITUDE", "SampleDateLocal" = "SAMPLEDATE", "NRScode" = "NRS_CODE") %>%
@@ -491,8 +485,7 @@ NRSZdat <- read_csv("NRS_zoop_raw.csv", na = "(null)") %>%
 NRSZcl <- read_csv("ChangeLogNRSZ.csv", na = "(null)") %>%
   dplyr::rename("TaxonName" = "TAXON_NAME", "StartDate" = "START_DATE", "ParentName" = "PARENT_NAME")
 
-##################################################################################################################################
-## NRS ZOOP RAW
+#### NRS ZOOP RAW ####
 
 NRSRawZ1 <- left_join(NRSZsamp, NRSZdat, by = "Sample") %>% select(c(1,3:11,16)) %>% arrange(-desc(TaxonName)) 
 NRSRawZ <- NRSRawZ1 %>% pivot_wider(names_from = TaxonName, values_from = ZAbund_m3, values_fill = list(ZAbund_m3 = 0)) %>% 
@@ -500,7 +493,7 @@ NRSRawZ <- NRSRawZ1 %>% pivot_wider(names_from = TaxonName, values_from = ZAbund
 
 fwrite(NRSRawP, file = "NRS_zoop_raw_mat.csv", row.names = FALSE)
 
-## NRS ZOOP HTG
+#### NRS ZOOP HTG ####
 
 nrsHTGZ1 <- NRSZdat %>% group_by(Sample, TaxonGroup) %>% summarise(ZAbund_m3 = sum(ZAbund_m3, na.rm = TRUE)) %>%
   filter(!TaxonGroup %in% c('Other')) 
@@ -512,7 +505,7 @@ nrsHTGZ <-  nrsHTGZ1 %>% pivot_wider(names_from = TaxonGroup, values_from = ZAbu
 
 fwrite(nrsHTGZ[,-1], file = "NRS_zoop_HTG_mat.csv", row.names = FALSE)
 
-## NRS ZOOP GENUS
+#### NRS ZOOP GENUS ####
 
 # Check genus are effected by change log
 nrszlg <- NRSZcl %>% mutate(genus1 = word(TaxonName, 1),
@@ -560,7 +553,7 @@ NRSGenZ <-  NRSGenZ1 %>% pivot_wider(names_from = Genus, values_from = ZAbund_m3
 
 fwrite(NRSGenZ, file = "NRS_zoop_genus_mat.csv", row.names = FALSE)
 
-## NRS ZOOP COPEPODS
+#### NRS ZOOP COPEPODS ####
 
 # Check at what level we need change log
 nrsclc <- NRSZcl %>% mutate(same = ifelse(TaxonName == ParentName, "yes", "no")) %>%
@@ -611,7 +604,7 @@ NRSCop <-  NRSCop1 %>% pivot_wider(names_from = Species, values_from = ZAbund_m3
 
 fwrite(NRSCop, file = "NRS_zoop_copes_mat.csv", row.names = FALSE)
 
-## NRS ZOOP NON-COPEPODS
+#### NRS ZOOP NON-COPEPODS ####
 
 # for non change log species
 
@@ -657,18 +650,4 @@ NRSnCop <-  NRSnCop1 %>% pivot_wider(names_from = Species, values_from = ZAbund_
   arrange(desc(SampleDateLocal)) 
 
 fwrite(NRSnCop, file = "NRS_zoop_noncopes_mat.csv", row.names = FALSE)
-
-
-#################################################################################################################################
-
-
-
-
-
-
-
-
-
-
-
 
