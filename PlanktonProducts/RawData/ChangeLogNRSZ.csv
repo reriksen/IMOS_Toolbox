@@ -43,10 +43,10 @@ Pseudosagitta gazellae,2010-09-23 00:00:00,Chaetognatha
 Pterosagitta draco,2010-09-23 00:00:00,Chaetognatha
 Sagitta bipunctata,2010-09-23 00:00:00,Chaetognatha
 Sagittidae,2010-09-23 00:00:00,Chaetognatha
+Zonosagitta pulchra,2010-09-23 00:00:00,Chaetognatha
 Serratosagitta bierii,2010-09-23 00:00:00,Chaetognatha
 Serratosagitta tasmanica,2010-09-23 00:00:00,Chaetognatha
 Solidosagitta marri,2010-09-23 00:00:00,Chaetognatha
-Zonosagitta pulchra,2010-09-23 00:00:00,Chaetognatha
 Cladoceran f,2010-03-24 00:00:00,Cladoceran
 Cladoceran f gravid,2010-03-24 00:00:00,Cladoceran
 Pleopis polyphemoides,2010-03-24 00:00:00,Cladoceran
@@ -197,11 +197,11 @@ Oxycephalidae,2012-08-28 11:54:38,Hyperiid amphipod
 Phronima spp.,2008-09-29 00:00:00,Hyperiid amphipod
 Primno macropa,2008-09-29 00:00:00,Hyperiid amphipod
 Primno spp.,2012-05-08 09:06:13,Hyperiid amphipod
-Scina spp.,2008-09-29 00:00:00,Hyperiid amphipod
 Themisto gaudichaudii,2008-09-29 00:00:00,Hyperiid amphipod
 Vibilia antarctica,2008-09-29 00:00:00,Hyperiid amphipod
 Vibilia armata,2008-09-29 00:00:00,Hyperiid amphipod
 Vibilia spp.,2008-09-29 00:00:00,Hyperiid amphipod
+Scina spp.,2008-09-29 00:00:00,Hyperiid amphipod
 Limacina helicina,2008-09-29 00:00:00,Limacina
 Limacina retroversa,2008-09-29 00:00:00,Limacina
 Lucifer spp. f,2010-06-18 00:00:00,Lucifer spp.
@@ -225,8 +225,8 @@ Leptomedusae,2010-01-11 00:00:00,Medusa
 Leptothecata,2010-01-11 00:00:00,Medusa
 Liriope tetraphylla,2011-07-01 00:00:00,Medusa
 Narcomedusae,2010-01-11 00:00:00,Medusa
-Solmundella bitentaculata,2008-09-29 00:00:00,Medusa
 Trachymedusae,2010-01-11 00:00:00,Medusa
+Solmundella bitentaculata,2008-09-29 00:00:00,Medusa
 Brachyuran megalopa,2008-09-29 00:00:00,Megalope
 Nauplii Rhincalanus gigas,2008-09-29 00:00:00,Nauplii calanoid
 Nauplii calanoid (Rhincalanus?),2008-09-29 00:00:00,Nauplii calanoid
@@ -345,6 +345,9 @@ Pegea confoederata,2010-02-05 00:00:00,Salpidae
 Salpa fusiformis,2008-09-29 00:00:00,Salpidae
 Salpidae sol,2013-07-24 17:43:06,Salpidae
 Soestia zonaria agg,2011-07-01 00:00:00,Salpidae
+Temora turbinata j,2008-09-29 00:00:00,Temora spp. j
+Thalia democratica agg,2010-01-11 00:00:00,Thalia democratica
+Thalia democratica sol,2010-01-11 00:00:00,Thalia democratica
 Abylidae,2010-09-14 00:00:00,Siphonophore
 Abylopsis eschscholtzii,2010-09-14 00:00:00,Siphonophore
 Abylopsis spp.,2011-07-01 00:00:00,Siphonophore
@@ -369,6 +372,3 @@ Siphonophore abylidae,2010-09-14 00:00:00,Siphonophore
 Siphonophore diphyidae,2010-09-14 00:00:00,Siphonophore
 Chelophyes spp.,2011-07-01 00:00:00,Sipunculid worm larvae
 Pelagosphera larvae,2014-09-25 12:12:55,Sipunculid worm larvae
-Temora turbinata j,2008-09-29 00:00:00,Temora spp. j
-Thalia democratica agg,2010-01-11 00:00:00,Thalia democratica
-Thalia democratica sol,2010-01-11 00:00:00,Thalia democratica
