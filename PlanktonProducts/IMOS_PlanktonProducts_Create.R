@@ -3,8 +3,8 @@
 
 ## Created: May 2020
 ## Updated: 
-## 21 July 2020 (Written to Git)
-## 22 September 2020 (Updated data file structure)
+  ## 21 July 2020 (Written to Git)
+  ## 22 September 2020 (Updated data file structure)
 
 suppressPackageStartupMessages({
   library(tidyverse)
@@ -490,7 +490,8 @@ NRSRawP1 <- left_join(NRSPsamp, NRSPdat, by = "Sample") %>%
 NRSRawP <- NRSRawP1 %>% 
   pivot_wider(names_from = TaxonName, values_from = Cells_L, values_fill = list(Cells_L = 0)) %>% 
   arrange(desc(SampleDateLocal)) %>% 
-  select(-Sample)
+  select(-Sample) %>% 
+  mutate(SampleDateLocal = as.character(SampleDateLocal))
 
 fwrite(NRSRawP, file = paste0(outD,.Platform$file.sep,"NRS_phyto_raw_mat.csv"), row.names = FALSE)
 
@@ -579,7 +580,8 @@ NRSGenP1 <- NRSGenP1 %>%
 # select maximum value of duplicates, but leave -999 for all other occurrences as not regularly identified
 NRSGenP <-  NRSGenP1 %>% 
   pivot_wider(names_from = Genus, values_from = Cells_L, values_fill = list(Cells_L = 0)) %>% 
-  arrange(desc(SampleDateLocal)) 
+  arrange(desc(SampleDateLocal))  %>% 
+  mutate(SampleDateLocal = as.character(SampleDateLocal))
 
 fwrite(NRSGenP, file = paste0(outD,.Platform$file.sep,"NRS_phyto_genus_mat.csv"), row.names = FALSE)
 
@@ -648,7 +650,8 @@ NRSSpecP1 <- NRSSpecP1 %>%
 
 NRSSpecP <-  NRSSpecP1 %>% 
   pivot_wider(names_from = TaxonName, values_from = Cells_L, values_fill = list(Cells_L = 0)) %>% 
-  arrange(desc(SampleDateLocal)) 
+  arrange(desc(SampleDateLocal))  %>% 
+  mutate(SampleDateLocal = as.character(SampleDateLocal))
 
 fwrite(NRSSpecP, file = paste0(outD,.Platform$file.sep,"NRS_phyto_species_mat.csv"), row.names = FALSE)
 
@@ -678,7 +681,8 @@ NRSRawZ1 <- left_join(NRSZsamp, NRSZdat, by = "Sample") %>%
 
 NRSRawZ <- NRSRawZ1 %>% 
   pivot_wider(names_from = TaxonName, values_from = ZAbund_m3, values_fill = list(ZAbund_m3 = 0)) %>% 
-  arrange(desc(SampleDateLocal))
+  arrange(desc(SampleDateLocal)) %>% 
+  mutate(SampleDateLocal = as.character(SampleDateLocal))
 
 fwrite(NRSRawP, file = paste0(outD,.Platform$file.sep,"NRS_zoop_raw_mat.csv"), row.names = FALSE)
 
@@ -696,7 +700,8 @@ nrsHTGZ1 <-  NRSZsamp %>%
 nrsHTGZ <-  nrsHTGZ1 %>% 
   pivot_wider(names_from = TaxonGroup, values_from = ZAbund_m3, values_fill = list(ZAbund_m3 = 0)) %>% 
   arrange(desc(SampleDateLocal)) %>% 
-  select(-Sample)
+  select(-Sample) %>% 
+  mutate(SampleDateLocal = as.character(SampleDateLocal))
 
 fwrite(nrsHTGZ, file = paste0(outD,.Platform$file.sep,"NRS_zoop_HTG_mat.csv"), row.names = FALSE)
 
@@ -764,7 +769,8 @@ NRSGenZ1 <- NRSGenZ1 %>%
 
 NRSGenZ <-  NRSGenZ1 %>% 
   pivot_wider(names_from = Genus, values_from = ZAbund_m3, values_fill = list(ZAbund_m3 = 0)) %>% 
-  arrange(desc(SampleDateLocal)) 
+  arrange(desc(SampleDateLocal)) %>% 
+  mutate(SampleDateLocal = as.character(SampleDateLocal))
 
 fwrite(NRSGenZ, file = paste0(outD,.Platform$file.sep,"NRS_zoop_genus_mat.csv"), row.names = FALSE)
 
@@ -834,7 +840,8 @@ NRSCop1 <- NRSCop1 %>%
 
 NRSCop <-  NRSCop1 %>% 
   pivot_wider(names_from = Species, values_from = ZAbund_m3, values_fill = list(ZAbund_m3 = 0)) %>% 
-  arrange(desc(SampleDateLocal)) 
+  arrange(desc(SampleDateLocal)) %>% 
+  mutate(SampleDateLocal = as.character(SampleDateLocal))
 
 fwrite(NRSCop, file = paste0(outD,.Platform$file.sep,"NRS_zoop_copes_mat.csv"), row.names = FALSE)
 
@@ -898,7 +905,9 @@ NRSnCop1 <- NRSnCop1 %>%
 
 NRSnCop <- NRSnCop1 %>% 
   pivot_wider(names_from = Species, values_from = ZAbund_m3, values_fill = list(ZAbund_m3 = 0)) %>% 
-  arrange(desc(SampleDateLocal)) 
+  arrange(desc(SampleDateLocal)) %>% 
+  mutate(SampleDateLocal = as.character(SampleDateLocal))
 
 fwrite(NRSnCop, file = paste0(outD,.Platform$file.sep,"NRS_zoop_noncopes_mat.csv"), row.names = FALSE)
 
+test <- read_csv(paste0(outD,.Platform$file.sep,"NRS_zoop_noncopes_mat.csv"))
