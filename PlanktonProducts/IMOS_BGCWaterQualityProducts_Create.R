@@ -1,10 +1,9 @@
 ## IMOS BGC Combined Water Quality Parameters
 ## Claire Davies (CSIRO) and Jason D Everett (UQ/CSIRO)
 
-## Created: May 2020
+## Created: Aug 2020
 ## Updated: 
-## 21 July 2020 (Written to Git)
-## 22 September 2020 (Updated data file structure)
+## 24 Sept 2020 (Written to Git)
 
 suppressPackageStartupMessages({
   library(lubridate)
@@ -19,7 +18,6 @@ outD <- "Output"
 untibble <- function (tibble) {
   data.frame(unclass(tibble), check.names = FALSE, stringsAsFactors = FALSE)
 }  ## escape the nonsense
-
 
 ################################
 ## Bring in data for combined water quality
