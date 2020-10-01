@@ -7,7 +7,6 @@
 
 suppressPackageStartupMessages({
   library(readr)
-  library(dplyr)
   library(lubridate)
   library(reshape)
   library(vegan)
@@ -27,9 +26,9 @@ untibble <- function (tibble) {
 # ensure we have all trips accounted for 
 # note there are circumstances where a trip won't have a phyto and a zoo samples due to loss of sample etc.
 
-Trips <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_trips.csv"), na = "(null)") %>% 
-  dplyr::rename("Station" = "STATION_NAME", "Latitude" = "Y_COORD", "Longitude" = "X_COORD", "SampleDateLocal" = "TRIP_START_DATETIME_LOCAL", 
-                "NRScode" = "NRS_CODE", "StationDepth_m" = "STATION_DEPTH") %>%
+NRSTrips <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_trips.csv"), na = "(null)") %>% 
+  rename(Station = STATION_NAME, Latitude = Y_COORD, Longitude = X_COORD, SampleDateLocal = TRIP_START_DATETIME_LOCAL, 
+                NRScode = NRS_CODE, StationDepth_m = STATION_DEPTH) %>%
   select(-SAMPLEDEPTH_M) %>%
   mutate(Year = year(SampleDateLocal),
          Month = month(SampleDateLocal),
@@ -42,8 +41,8 @@ ctd <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_CTD.csv"), na = "(null)",
                 col_types = cols(PRES = col_double(), # columns start with  nulls so tidyverse annoyingly assigns col_logical()
                                  PAR = col_double(),
                                  SPEC_CNDC = col_double())) %>% 
-  dplyr::rename("NRScode" = "NRS_TRIP_CODE", "SampleDepth_m" = "PRES_REL", "CTDDensity_kgm3" = "DENS", "CTDTemperature" = "TEMP", "CTDPAR_umolm2s" = "PAR",
-                "CTDConductivity_sm" = "CNDC", "CTDSpecificConductivity_Sm" = "SPEC_CNDC", "CTDSalinity" = "PSAL", "CTDTurbidity_ntu" = "TURB", "CTDChlF_mgm3" = "CHLF") %>%
+  rename(NRScode = NRS_TRIP_CODE, SampleDepth_m = PRES_REL, CTDDensity_kgm3 = DENS, CTDTemperature = TEMP, CTDPAR_umolm2s = PAR,
+                CTDConductivity_sm = CNDC, CTDSpecificConductivity_Sm = SPEC_CNDC, CTDSalinity = PSAL, CTDTurbidity_ntu = TURB, CTDChlF_mgm3 = CHLF) %>%
   mutate(SampleDepth_m = as.character(SampleDepth_m, 0)) %>% 
   filter(SampleDepth_m <11) %>% group_by(NRScode) %>% summarise(CTD_SST_C = mean(CTDTemperature, na.rm = TRUE),
                                                                 CTDChlF_mgm3 = mean(CTDChlF_mgm3, na.rm = TRUE)) %>% untibble()
@@ -68,7 +67,7 @@ if(.Platform$OS.type == "windows") {
 
 library(ncdf4)
 
-dat <- Trips %>% 
+NRSdat <- Trips %>% 
   rename(Date = SampleDateLocal)
 
 # Possible products
@@ -81,10 +80,10 @@ res_temp <- "1d"
 res_spat <- 10 # Return the average of res_spat x res_spat pixels
 
 # Get MODIS Data
-dat <- fIMOS_MatchMODIS(dat, pr, res_temp, res_spat)
+NRSdat <- fIMOS_MatchMODIS(NRSdat, pr, res_temp, res_spat)
 
 # Get Altimetry (Gridded sea level anomaly, Gridded sea level, Surface geostrophic velocity)
-dat <- fIMOS_MatchAltimetry(dat, res_spat)
+NRSdat <- fIMOS_MatchAltimetry(NRSdat, res_spat)
 
 # nutrient data
 nuts <- chemistry %>% group_by(NRScode) %>% summarise(Silicate_umol_L = mean(Silicate_umol_L, na.rm = TRUE),
@@ -200,7 +199,7 @@ DinoEven <- ndino %>% cbind(ShannonDinoDiversity) %>% mutate(DinoflagellateEvenn
 
 
 # make indices table (nrows must always equal nrows of Trips)
-Indices <-  Trips  %>%
+Indices <-  NRSTrips  %>%
   left_join(TZoo, by = ("NRScode")) %>%
   left_join(TCope, by = ("NRScode")) %>%
   left_join(biomass %>% select(-SampleDepth_m), by = ("NRScode")) %>%
@@ -215,7 +214,7 @@ Indices <-  Trips  %>%
   left_join(DiaEven, by = ("NRScode")) %>%
   left_join(DinoEven, by = ("NRScode")) %>%   
   left_join(ctd, by = ("NRScode")) %>%
-  left_join(dat %>% select(NRScode, sst_1d, chl_oc3_1d, GSLA, GSL, UCUR, VCUR), by = ("NRScode")) %>%
+  left_join(NRSdat %>% select(NRScode, sst_1d, chl_oc3_1d, GSLA, GSL, UCUR, VCUR), by = ("NRScode")) %>%
   left_join(nuts, by = ("NRScode")) 
   
 

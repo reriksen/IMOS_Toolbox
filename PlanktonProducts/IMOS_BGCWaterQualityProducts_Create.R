@@ -26,20 +26,20 @@ untibble <- function (tibble) {
 # Each trip and depth combination for water quality parameters
 # the number of rows in this table should equal that in comb, if not look out for duplicates and replicates
 trips <-  read_csv(paste0(rawD,.Platform$file.sep,"nrs_trips.csv"), na = "(null)") %>% 
-  dplyr::rename("Station" = "STATION_NAME", "Latitude" = "Y_COORD", "Longitude" = "X_COORD", "SampleDateLocal" = "TRIP_START_DATETIME_LOCAL", "NRScode" = "NRS_CODE",
-                "SampleDepth_m" = "SAMPLEDEPTH_M") %>%
+  rename(Station = STATION_NAME, Latitude = Y_COORD, Longitude = X_COORD, SampleDateLocal = TRIP_START_DATETIME_LOCAL, NRScode = NRS_CODE,
+                SampleDepth_m = SAMPLEDEPTH_M) %>%
   mutate(SampleDateLocal = as.character(SampleDateLocal))
 
 # Hydrochemistry data 
 chemistry <- read_csv(paste0(rawD,.Platform$file.sep,"chemistry.csv"), na = "(null)") %>% 
-  dplyr::rename("NRScode" = "NRS_TRIP_CODE",
-                "SampleDepth_m" = "SAMPLE_DEPTH_M", "Silicate_umol_L" = "SILICATE_UMOL_PER_L", "Nitrate_umol_L" =  "NITRATE_UMOL_PER_L",
-                "Phosphate_umol_L" =  "PHOSPHATE_UMOL_PER_L", "Salinity" = "SALINITY", 
-                "Ammonium_umol_L" =  "AMMONIUM_UMOL_PER_L",
-                "Nitrite_umol_L" =  "NITRITE_UMOL_PER_L",
-                "TCO2_umol_kg" =  "TCO2_UMOL_PER_KG",
-                "TAlkalinity_umol_kg" =  "TALKALINITY_UMOL_PER_KG",
-                "Oxygen_umol_L" =  "OXYGEN_UMOL_PER_L") %>% 
+  rename(NRScode = NRS_TRIP_CODE,
+                SampleDepth_m = SAMPLE_DEPTH_M, Silicate_umol_L = SILICATE_UMOL_PER_L, Nitrate_umol_L =  NITRATE_UMOL_PER_L,
+                Phosphate_umol_L =  PHOSPHATE_UMOL_PER_L, Salinity = SALINITY, 
+                Ammonium_umol_L =  AMMONIUM_UMOL_PER_L,
+                Nitrite_umol_L =  NITRITE_UMOL_PER_L,
+                TCO2_umol_kg =  TCO2_UMOL_PER_KG,
+                TAlkalinity_umol_kg =  TALKALINITY_UMOL_PER_KG,
+                Oxygen_umol_L =  OXYGEN_UMOL_PER_L) %>% 
   mutate(SampleDepth_m = as.character(SampleDepth_m),
          NRScode = substring(NRScode,4),
          Silicate_umol_L = ifelse(SILICATE_FLAG %in% c(3,4,9), NA, Silicate_umol_L), # remove all data flagged as bad or probably bad
@@ -63,23 +63,23 @@ chemistry <- read_csv(paste0(rawD,.Platform$file.sep,"chemistry.csv"), na = "(nu
 
 # zooplankton biomass
 biomass <-  read_csv(paste0(rawD,.Platform$file.sep,"nrs_biomass.csv"), na = "(null)") %>% 
-  dplyr::rename("NRScode" = "NRS_CODE", "Biomass_mgm3" = "BIOMASS_MGM3") %>% 
+  rename(NRScode = NRS_CODE, Biomass_mgm3 = BIOMASS_MGM3) %>% 
   mutate(SampleDepth_m = "WC",
          NRScode = gsub('^.{3}|.{9}$', '', NRScode)) %>% untibble()
 
 # pigements data
 pigments <-  read_csv(paste0(rawD,.Platform$file.sep,"nrs_pigments.csv"), na = "(null)") %>% 
-  dplyr::rename("NRScode" = "NRS_TRIP_CODE",
-                "SampleDepth_m" = "SAMPLE_DEPTH_M") %>%
+  rename(NRScode = NRS_TRIP_CODE,
+                SampleDepth_m = SAMPLE_DEPTH_M) %>%
   mutate(SampleDepth_m = as.character(SampleDepth_m),
          NRScode = substring(NRScode,4)) %>% 
   filter(QC_FLAG %in% c(0,1,2,5,8)) %>% untibble() # keep data flagged as good
 
 #flow cyctometry picoplankton data
 pico <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_picoplankton.csv"), na = "(null)") %>% 
-  dplyr::rename("NRScode" = "NRS_TRIP_CODE",
-                "SampleDepth_m" = "SAMPLE_DEPTH_M", "Prochlorococcus_cells_ml" = "PROCHLOROCOCCUS_CELLSPERML",  "Synecochoccus_cells_ml" = "SYNECOCHOCCUS_CELLSPERML", 
-                "Picoeukaryotes_cells_ml" = "PICOEUKARYOTES_CELLSPERML") %>%
+  rename(NRScode = NRS_TRIP_CODE,
+                SampleDepth_m = SAMPLE_DEPTH_M, Prochlorococcus_cells_ml = PROCHLOROCOCCUS_CELLSPERML, Synecochoccus_cells_ml = SYNECOCHOCCUS_CELLSPERML, 
+                Picoeukaryotes_cells_ml = PICOEUKARYOTES_CELLSPERML) %>%
   mutate(SampleDepth_m = as.character(SampleDepth_m),
          NRScode = substring(NRScode,4),
          Prochlorococcus_cells_ml = ifelse(PROCHLOROCOCCUS_FLAG %in% c(3,4,9), NA, Prochlorococcus_cells_ml), # remove bad data
@@ -91,9 +91,9 @@ pico <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_picoplankton.csv"), na = "(
 
 # Total suspended solid data
 TSS <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_TSS.csv"), na = "(null)") %>% 
-  dplyr::rename("NRScode" = "NRS_TRIP_CODE",
-                "SampleDepth_m" = "SAMPLE_DEPTH_M", "TSS_mg_L" = "TSS_MG_PER_L", "InorganicFraction_mg_L" = "INORGANIC_FRACTION_MG_PER_L", 
-                "OrganicFraction_mg_L" = "ORGANIC_FRACTION_MG_PER_L", "Secchi_m" = "SECCHI_DEPTH_M") %>%
+  rename(NRScode = NRS_TRIP_CODE,
+                SampleDepth_m = SAMPLE_DEPTH_M, TSS_mg_L = TSS_MG_PER_L, InorganicFraction_mg_L = INORGANIC_FRACTION_MG_PER_L, 
+                OrganicFraction_mg_L = ORGANIC_FRACTION_MG_PER_L, Secchi_m = SECCHI_DEPTH_M) %>%
   mutate(SampleDepth_m = as.character(SampleDepth_m),
          NRScode = substring(NRScode,4),
          TSS_mg_L = ifelse(TSS_FLAG %in% c(3,4,9), NA, TSS_mg_L), # remove bad data
@@ -105,8 +105,8 @@ TSS <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_TSS.csv"), na = "(null)") %>
 
 # secchi disc        
 Secchi <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_TSS.csv"), na = "(null)") %>% 
-  dplyr::rename("NRScode" = "NRS_TRIP_CODE",
-                "SampleDepth_m" = "SAMPLE_DEPTH_M", "Secchi_m" = "SECCHI_DEPTH_M") %>%
+  rename(NRScode = NRS_TRIP_CODE,
+                SampleDepth_m = SAMPLE_DEPTH_M, Secchi_m = SECCHI_DEPTH_M) %>%
   select(NRScode, Secchi_m, SampleDepth_m) %>% distinct() %>%
   mutate(SampleDepth_m = "WC",
          NRScode = substring(NRScode,4))
@@ -116,8 +116,8 @@ CTD <-  read_csv(paste0(rawD,.Platform$file.sep,"nrs_CTD.csv"), na = "(null)",
                  col_types = cols(PRES = col_double(), # columns start with  nulls so tidyverse annoyingly assigns col_logical()
                                   PAR = col_double(),
                                   SPEC_CNDC = col_double())) %>% 
-  dplyr::rename("NRScode" = "NRS_TRIP_CODE", "SampleDepth_m" = "PRES_REL", "CTDDensity_kgm3" = "DENS", "CTDTemperature" = "TEMP", "CTDPAR_umolm2s" = "PAR",
-                "CTDConductivity_sm" = "CNDC", "CTDSpecificConductivity_Sm" = "SPEC_CNDC", "CTDSalinity" = "PSAL", "CTDTurbidity_ntu" = "TURB", "CTDChlF_mgm3" = "CHLF") %>%
+  rename(NRScode = NRS_TRIP_CODE, SampleDepth_m = PRES_REL, CTDDensity_kgm3 = DENS, CTDTemperature = TEMP, CTDPAR_umolm2s = PAR,
+                CTDConductivity_sm = CNDC, CTDSpecificConductivity_Sm = SPEC_CNDC, CTDSalinity = PSAL, CTDTurbidity_ntu = TURB, CTDChlF_mgm3 = CHLF) %>%
   mutate(SampleDepth_m = as.character(SampleDepth_m, 0)) %>% untibble()
 
 # combined BGC data for each station at the sample depth

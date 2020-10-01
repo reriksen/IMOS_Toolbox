@@ -19,7 +19,8 @@ outD <- "Output"
 #### CPR Phytoplankton #######################################################################################################################################################
 # Bring in all CPR phytoplankton samples
 cprPsamp <- read_csv(paste0(rawD,.Platform$file.sep,"PSampCPR.csv"), na = "(null)") %>% 
-  dplyr::rename("Sample" = "SAMPLE", "Route" = "ROUTE", "Latitude" = "LATITUDE", "Longitude" = "LONGITUDE", "SampleDateUTC" = "SAMPLEDATEUTC") %>%
+  rename(Sample = SAMPLE, Route = ROUTE, Latitude = LATITUDE, Longitude = LONGITUDE, SampleDateUTC = SAMPLEDATEUTC) %>%
+  select(-REGION) %>%
   mutate(Year = year(SampleDateUTC),
          Month = month(SampleDateUTC),
          Day = day(SampleDateUTC),
@@ -27,11 +28,11 @@ cprPsamp <- read_csv(paste0(rawD,.Platform$file.sep,"PSampCPR.csv"), na = "(null
 
 # Bring in plankton data
 cprPdat <- read_csv(paste0(rawD,.Platform$file.sep,"CPR_phyto_raw.csv"), na = "(null)") %>%
-  dplyr::rename("Sample" = "SAMPLE", "TaxonName" = "TAXON_NAME", "TaxonGroup" = "TAXON_GROUP", "Genus" = "GENUS", "Species" = "SPECIES", "PAbun_m3" = "PHYTO_ABUNDANCE_M3")
+  rename(Sample = SAMPLE, TaxonName = TAXON_NAME, TaxonGroup = TAXON_GROUP, Genus = GENUS, Species = SPECIES, PAbun_m3 = PHYTO_ABUNDANCE_M3)
 
 # Bring in Change Log
 cprPcl <- read_csv(paste0(rawD,.Platform$file.sep,"ChangeLogCPRP.csv"), na = "(null)") %>%
-  dplyr::rename("TaxonName" = "TAXON_NAME", "StartDate" = "START_DATE", "ParentName" = "PARENT_NAME")
+  rename(TaxonName = TAXON_NAME, StartDate = START_DATE, ParentName = PARENT_NAME)
 
 #### CPR PHYTO RAW ####
 
@@ -206,7 +207,7 @@ fwrite(cprSpecP, file = paste0(outD,.Platform$file.sep,"CPR_phyto_species_mat.cs
 #### CPR Zoopplankton #### ################################################################################################################################
 # Bring in all CPR zooplankton samples
 cprZsamp <- read_csv(paste0(rawD,.Platform$file.sep,"ZSampCPR.csv"), na = "(null)") %>% 
-  dplyr::rename("Sample" = "SAMPLE", "Route" = "ROUTE", "Latitude" = "LATITUDE", "Longitude" = "LONGITUDE", "SampleDateUTC" = "SAMPLEDATEUTC") %>%
+ rename(Sample = SAMPLE, Route = ROUTE, Latitude = LATITUDE, Longitude = LONGITUDE, SampleDateUTC = SAMPLEDATEUTC) %>%
   mutate(Year = year(SampleDateUTC),
          Month = month(SampleDateUTC),
          Day = day(SampleDateUTC),
@@ -214,12 +215,12 @@ cprZsamp <- read_csv(paste0(rawD,.Platform$file.sep,"ZSampCPR.csv"), na = "(null
 
 # Bring in plankton summary data
 cprZdat <- read_csv(paste0(rawD,.Platform$file.sep,"CPR_zoo_raw.csv"), na = "(null)") %>%
-  dplyr::rename("Sample" = "SAMPLE", "TaxonName" = "TAXON_NAME", "Copepod" = "TAXON_GROUP", "TaxonGroup" = "TAXON_GRP01",
-                "Genus" = "GENUS", "Species" = "SPECIES", "ZAbun_m3" = "ZOOP_ABUNDANCE_M3")
+  rename(Sample = SAMPLE, TaxonName = TAXON_NAME, Copepod = TAXON_GROUP, TaxonGroup = TAXON_GRP01,
+                Genus = GENUS, Species = SPECIES, ZAbun_m3 = ZOOP_ABUNDANCE_M3)
 
 # Bring in Change Log
 cprZcl <- read_csv(paste0(rawD,.Platform$file.sep,"ChangeLogCPRZ.csv"), na = "(null)") %>%
-  dplyr::rename("TaxonName" = "TAXON_NAME", "StartDate" = "START_DATE", "ParentName" = "PARENT_NAME")
+  rename(TaxonName = TAXON_NAME, StartDate = START_DATE, ParentName = PARENT_NAME)
 
 #### CPR ZOOP RAW ####
 
@@ -466,7 +467,7 @@ fwrite(cprnCop, file = paste0(outD,.Platform$file.sep,"CPR_zoop_noncopes_mat.csv
 
 # Bring in all NRS phytoplankton samples
 NRSPsamp <- read_csv(paste0(rawD,.Platform$file.sep,"PSampNRS.csv"), na = "(null)") %>% 
-  dplyr::rename("Sample" = "SAMPLE", "Station" = "STATION", "Latitude" = "LATITUDE", "Longitude" = "LONGITUDE", "SampleDateLocal" = "SAMPLEDATE", "NRScode" = "NRS_CODE") %>%
+  rename(Sample = SAMPLE, Station = STATION, Latitude = LATITUDE, Longitude = LONGITUDE, SampleDateLocal = SAMPLEDATE, NRScode = NRS_CODE) %>%
   mutate(Year = year(SampleDateLocal),
          Month = month(SampleDateLocal),
          Day = day(SampleDateLocal),
@@ -474,12 +475,12 @@ NRSPsamp <- read_csv(paste0(rawD,.Platform$file.sep,"PSampNRS.csv"), na = "(null
 
 # Bring in plankton data
 NRSPdat <- read_csv(paste0(rawD,.Platform$file.sep,"NRS_phyto_raw.csv"), na = "(null)") %>%
-  dplyr::rename("Sample" = "SAMPLE", "TaxonName" = "TAXON_NAME", "TaxonGroup" = "TAXON_GROUP", "Genus" = "GENUS", "Species" = "SPECIES", 
-                "Cells_L" = "CELL_PER_LITRE", "Biovolume_uM3_L" = "BIOVOLUME_UM3_PER_L")
+  rename(Sample = SAMPLE, TaxonName = TAXON_NAME, TaxonGroup = TAXON_GROUP, Genus = GENUS, Species = SPECIES, 
+                Cells_L = CELL_PER_LITRE, Biovolume_uM3_L = BIOVOLUME_UM3_PER_L)
 
 # Bring in Change Log
 NRSPcl <- read_csv(paste0(rawD,.Platform$file.sep,"ChangeLogNRSP.csv"), na = "(null)") %>%
-  dplyr::rename("TaxonName" = "TAXON_NAME", "StartDate" = "START_DATE", "ParentName" = "PARENT_NAME")
+  rename(TaxonName = TAXON_NAME, StartDate = START_DATE, ParentName = PARENT_NAME)
 
 #### NRS PHYTO RAW ####
 
@@ -658,7 +659,7 @@ fwrite(NRSSpecP, file = paste0(outD,.Platform$file.sep,"NRS_phyto_species_mat.cs
 #### NRS Zooplankton #### #################################################################################################################################
 # Bring in all NRS phytoplankton samples
 NRSZsamp <- read_csv(paste0(rawD,.Platform$file.sep,"ZSampNRS.csv"), na = "(null)") %>% 
-  dplyr::rename("Sample" = "SAMPLE", "Station" = "STATION", "Latitude" = "LATITUDE", "Longitude" = "LONGITUDE", "SampleDateLocal" = "SAMPLEDATE", "NRScode" = "NRS_CODE") %>%
+  rename(Sample = SAMPLE, Station = STATION, Latitude = LATITUDE, Longitude = LONGITUDE, SampleDateLocal = SAMPLEDATE, NRScode = NRS_CODE) %>%
   mutate(Year = year(SampleDateLocal),
          Month = month(SampleDateLocal),
          Day = day(SampleDateLocal),
@@ -666,12 +667,12 @@ NRSZsamp <- read_csv(paste0(rawD,.Platform$file.sep,"ZSampNRS.csv"), na = "(null
 
 # Bring in plankton data
 NRSZdat <- read_csv(paste0(rawD,.Platform$file.sep,"NRS_zoop_raw.csv"), na = "(null)") %>%
-  dplyr::rename("Sample" = "SAMPLE", "TaxonName" = "TAXON_NAME", "Copepod" = "TAXON_GROUP", "TaxonGroup" = "TAXON_GRP01", 
-                "Genus" = "GENUS", "Species" = "SPECIES", "ZAbund_m3" = "TAXON_PER_M3")
+  rename(Sample = SAMPLE, TaxonName = TAXON_NAME, Copepod = TAXON_GROUP, TaxonGroup = TAXON_GRP01, 
+                Genus = GENUS, Species = SPECIES, ZAbund_m3 = TAXON_PER_M3)
 
 # Bring in Change Log
 NRSZcl <- read_csv(paste0(rawD,.Platform$file.sep,"ChangeLogNRSZ.csv"), na = "(null)") %>%
-  dplyr::rename("TaxonName" = "TAXON_NAME", "StartDate" = "START_DATE", "ParentName" = "PARENT_NAME")
+  rename(TaxonName = TAXON_NAME, StartDate = START_DATE, ParentName = PARENT_NAME)
 
 #### NRS ZOOP RAW ####
 
