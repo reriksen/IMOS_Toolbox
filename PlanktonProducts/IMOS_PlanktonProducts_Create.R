@@ -28,7 +28,7 @@ cprPsamp <- read_csv(paste0(rawD,.Platform$file.sep,"PSampCPR.csv"), na = "(null
 
 # Bring in plankton data
 cprPdat <- read_csv(paste0(rawD,.Platform$file.sep,"CPR_phyto_raw.csv"), na = "(null)") %>%
-  rename(Sample = SAMPLE, TaxonName = TAXON_NAME, TaxonGroup = TAXON_GROUP, Genus = GENUS, Species = SPECIES, PAbun_m3 = PHYTO_ABUNDANCE_M3)
+  rename(Sample = SAMPLE, TaxonName = TAXON_NAME, TaxonGroup = TAXON_GROUP, Genus = GENUS, Species = SPECIES, PAbun_m3 = PHYTO_ABUNDANCE_M3, BioVolume_um3_m3 = BIOVOL_UM3_M3)
 
 # Bring in Change Log
 cprPcl <- read_csv(paste0(rawD,.Platform$file.sep,"ChangeLogCPRP.csv"), na = "(null)") %>%
