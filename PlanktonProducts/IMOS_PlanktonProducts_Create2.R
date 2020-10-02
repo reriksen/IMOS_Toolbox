@@ -67,7 +67,7 @@ if(.Platform$OS.type == "windows") {
 
 library(ncdf4)
 
-NRSdat <- Trips %>% 
+NRSdat <- NRSTrips %>% 
   rename(Date = SampleDateLocal)
 
 # Possible products
