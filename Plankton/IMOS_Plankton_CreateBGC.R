@@ -4,6 +4,7 @@
 ## Created: Aug 2020
 ## Updated: 
 ## 24 Sept 2020 (Written to Git)
+## 6th October 2020
 
 suppressPackageStartupMessages({
   library(lubridate)
@@ -25,7 +26,7 @@ outD <- "Output"
 NRSTrips <- get_NRSTrips()
 
 # Hydrochemistry data 
-Chemistry <- read_csv(paste0(rawD,.Platform$file.sep,"chemistry.csv"), na = "(null)") %>% 
+Chemistry <- read_csv(paste0(rawD,.Platform$file.sep,"chemistry.csv"), na = c("(null)", NaN)) %>% 
   rename(NRScode = NRS_TRIP_CODE,
          SampleDepth_m = SAMPLE_DEPTH_M, Silicate_umol_L = SILICATE_UMOL_PER_L, Nitrate_umol_L =  NITRATE_UMOL_PER_L,
          Phosphate_umol_L =  PHOSPHATE_UMOL_PER_L, Salinity = SALINITY, 
@@ -54,7 +55,10 @@ Chemistry <- read_csv(paste0(rawD,.Platform$file.sep,"chemistry.csv"), na = "(nu
             Oxygen_umol_L = mean(Oxygen_umol_L, na.rm = TRUE),
             TCO2_umol_kg = mean(TCO2_umol_kg, na.rm = TRUE),
             TAlkalinity_umol_kg = mean(TAlkalinity_umol_kg, na.rm = TRUE),
-            Salinity = mean(Salinity, na.rm = TRUE)) %>% 
+            Salinity = mean(Salinity, na.rm = TRUE),
+            .groups = "drop") %>% 
+  ungroup() %>% 
+  mutate_all(~ replace(., is.na(.), NA)) %>% 
   untibble()
 
 # Zooplankton biomass
@@ -64,7 +68,7 @@ ZBiomass <-  read_csv(paste0(rawD,.Platform$file.sep,"nrs_biomass.csv"), na = "(
          NRScode = gsub('^.{3}|.{9}$', '', NRScode)) %>% 
   untibble()
 
-# Pigements data
+# Pigments data
 Pigments <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_pigments.csv"), na = "(null)") %>% 
   rename(NRScode = NRS_TRIP_CODE,
          SampleDepth_m = SAMPLE_DEPTH_M) %>%
@@ -86,7 +90,8 @@ Pico <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_picoplankton.csv"), na = "(
   group_by(NRScode, SampleDepth_m) %>% 
   summarise(Prochlorococcus_cells_ml = mean(Prochlorococcus_cells_ml, na.rm = TRUE), # mean of replicates
             Synecochoccus_cells_ml = mean(Synecochoccus_cells_ml, na.rm = TRUE),
-            Picoeukaryotes_cells_ml = mean(Picoeukaryotes_cells_ml, na.rm = TRUE)) %>% 
+            Picoeukaryotes_cells_ml = mean(Picoeukaryotes_cells_ml, na.rm = TRUE),
+            .groups = "drop") %>% 
   untibble()
 
 # Total suspended solid data
@@ -102,7 +107,8 @@ TSS <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_TSS.csv"), na = "(null)") %>
   group_by(NRScode, SampleDepth_m) %>% 
   summarise(TSS_mg_L = mean(TSS_mg_L, na.rm = TRUE), # mean of replicates
             InorganicFraction_mg_L = mean(InorganicFraction_mg_L, na.rm = TRUE),
-            OrganicFraction_mg_L = mean(OrganicFraction_mg_L, na.rm = TRUE)) %>% 
+            OrganicFraction_mg_L = mean(OrganicFraction_mg_L, na.rm = TRUE),
+            .groups = "drop") %>% 
   untibble()
 
 # Secchi Disc        
@@ -135,12 +141,16 @@ BGC <- NRSTrips %>%
   left_join(Pigments, by = c("NRScode", "SampleDepth_m")) %>%
   left_join(TSS, by = c("NRScode", "SampleDepth_m")) %>%
   left_join(CTD, by = c("NRScode", "SampleDepth_m")) 
-  
+
 # test table
 # n should be 1, replicates or duplicate samples will have values > 1
 test <- BGC %>% 
   group_by(NRScode, SampleDepth_m) %>% 
-  summarise(n = n())
+  summarise(n = n(),
+            .groups = "drop")
+
+# Check
+max(test$n)
 
 # save to github
-fwrite(comb, file = paste0(outD,.Platform$file.sep,"NRS_CombinedWaterQuality.csv"), row.names = FALSE)
+fwrite(BGC, file = paste0(outD,.Platform$file.sep,"NRS_CombinedWaterQuality.csv"), row.names = FALSE)

@@ -4,6 +4,7 @@
 ## Created: Sept 2020
 ## Updated: 
 ## 1 Oct 2020 (Written to Git)
+## 6th October 2020
 
 suppressPackageStartupMessages({
   library(tidyverse)
@@ -37,7 +38,9 @@ CTD <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_CTD.csv"), na = "(null)",
   filter(SampleDepth_m <11) %>% 
   group_by(NRScode) %>% 
   summarise(CTD_SST_C = mean(CTDTemperature, na.rm = TRUE),
-            CTDChlF_mgm3 = mean(CTDChlF_mgm3, na.rm = TRUE)) %>% untibble()
+            CTDChlF_mgm3 = mean(CTDChlF_mgm3, na.rm = TRUE),
+            .groups = "drop") %>%
+  untibble()
 
 
 # Access satellite data for the sample dates using the IMOS_Toolbox
@@ -75,7 +78,7 @@ NRSdat <- fIMOS_MatchMODIS(NRSdat, pr, res_temp, res_spat)
 # Get Altimetry (Gridded sea level anomaly, Gridded sea level, Surface geostrophic velocity)
 NRSdat <- fIMOS_MatchAltimetry(NRSdat, res_spat)
 
-# nutrient data
+# Nutrient data
 Nuts <- Chemistry %>% 
   group_by(NRScode) %>% 
   summarise(Silicate_umol_L = mean(Silicate_umol_L, na.rm = TRUE),
@@ -86,19 +89,25 @@ Nuts <- Chemistry %>%
             Oxygen_umol_L = mean(Oxygen_umol_L, na.rm = TRUE),
             TCO2_umol_kg = mean(TCO2_umol_kg, na.rm = TRUE),
             TAlkalinity_umol_kg = mean(TAlkalinity_umol_kg, na.rm = TRUE),
-            Salinity_umol_L = mean(Salinity, na.rm = TRUE))
+            Salinity_umol_L = mean(Salinity, na.rm = TRUE),
+            .groups = "drop") %>% 
+  mutate_all(~ replace(., is.na(.), NA)) %>% 
+  untibble()
 
-# Total zoop abundance
+# Total Zooplankton Abundance
 ZooData <- NRSZsamp %>% 
   left_join(NRSZdat, by = "Sample")
 
 TZoo <- ZooData %>% 
-  group_by(NRScode) %>% summarise(ZoopAbundance_m3 = sum(ZAbund_m3, na.rm = TRUE))
+  group_by(NRScode) %>% 
+  summarise(ZoopAbundance_m3 = sum(ZAbund_m3, na.rm = TRUE),
+            .groups = "drop")
 
 TCope <- ZooData %>% 
   filter(Copepod == 'COPEPOD') %>% 
   group_by(NRScode) %>% 
-  summarise(CopeAbundance_m3 = sum(ZAbund_m3, na.rm = TRUE))
+  summarise(CopeAbundance_m3 = sum(ZAbund_m3, na.rm = TRUE),
+            .groups = "drop")
 
 # Bring in copepod information table with sizes etc.
 ZInfo <- read_csv(paste0(rawD,.Platform$file.sep,"taxon_info.csv"), na = "(null)") %>% 
@@ -111,7 +120,8 @@ ACopeSize <- zoodata %>%
   mutate(abunSize = SIZE_AVE_MM * ZAbund_m3, 
          DIET = ifelse(DIET == 'CC', 'CC', 'CO')) %>%
   group_by(NRScode) %>% 
-  summarise(AvgTotalLengthCopepod_mm = sum(abunSize, na.rm = TRUE)/sum(ZAbund_m3, na.rm = TRUE))
+  summarise(AvgTotalLengthCopepod_mm = sum(abunSize, na.rm = TRUE)/sum(ZAbund_m3, na.rm = TRUE),
+            .groups = "drop")
 
 HCrat <- ZooData %>% 
   filter(Copepod == 'COPEPOD') %>%
@@ -129,7 +139,8 @@ HCrat <- ZooData %>%
 
 # Bring in plankton data
 NRSZcount <- read_csv(paste0(rawD,.Platform$file.sep,"NRS_zoop_count_raw.csv"), na = "(null)") %>%
-  dplyr::rename("TaxonName" = "TAXON_NAME", "Copepod" = "TAXON_GROUP", "TaxonGroup" = "TAXON_GRP01", "NRScode" = "NRS_CODE",
+  dplyr::rename("TaxonName" = "TAXON_NAME", "Copepod" = "TAXON_GROUP", 
+                "TaxonGroup" = "TAXON_GRP01", "NRScode" = "NRS_CODE",
                 "Genus" = "GENUS", "Species" = "SPECIES", "TaxonCount" = "TAXON_COUNT")
 
 ZooCount <- NRSZsamp %>% 
@@ -145,7 +156,8 @@ ShannonCopepodDiversity <- ZooCount %>%
   filter(Copepod == 'COPEPOD' & Species != "spp." & !is.na(Species) & !grepl("cf.", Species) & !grepl("grp", Species)) %>% 
   mutate(TaxonName = paste0(Genus," ", word(Species,1))) %>% # bin complexes 
   group_by(NRScode, TaxonName) %>% 
-  summarise(ZCount = sum(TaxonCount, na.rm = TRUE)) %>%
+  summarise(ZCount = sum(TaxonCount, na.rm = TRUE),
+            .groups = "drop") %>%
   pivot_wider(values_from = ZCount, names_from = TaxonName, values_fill = 0) %>% 
   ungroup() %>%
   select(-NRScode) %>%
@@ -168,18 +180,21 @@ PhytoC <- PhytoData %>%
                                 ifelse(TaxonGroup == 'Cyanobacteria', 0.2, 0.288*(BV_Cell)^0.811 ))),
          Carbon_L = Cells_L * Carbon) %>% # Carbon per litre
   group_by(NRScode) %>% 
-  summarise(PhytoBiomassCarbon_pg_L = sum(Carbon_L))
+  summarise(PhytoBiomassCarbon_pg_L = sum(Carbon_L),
+            .groups = "drop")
 
 TPhyto <-  PhytoData %>% 
   group_by(NRScode) %>% 
-  summarise(AbundancePhyto_cells_L = sum(Cells_L, na.rm = TRUE))
+  summarise(AbundancePhyto_cells_L = sum(Cells_L, na.rm = TRUE),
+            .groups = "drop")
 
 DDrat <- PhytoData %>%
   filter(TaxonGroup %in% c('Centric diatom', "Pennate diatom", 'Dinoflagellate')) %>% 
   mutate(TaxonGroup = recode(TaxonGroup, 'Centric diatom' = 'Diatom', 'Pennate diatom' = 'Diatom')) %>%
   select(NRScode, TaxonGroup, Cells_L) %>% 
   group_by(NRScode, TaxonGroup) %>% 
-  summarise(sumTG = sum(Cells_L, na.rm = TRUE)) %>% 
+  summarise(sumTG = sum(Cells_L, na.rm = TRUE),
+            .groups = "drop") %>% 
   pivot_wider(values_from = sumTG, names_from = TaxonGroup) %>%
   mutate(DiatomDinoflagellateRatio = Diatom / (Diatom + Dinoflagellate)) %>% 
   untibble()
@@ -187,7 +202,8 @@ DDrat <- PhytoData %>%
 AvgCellVol <- PhytoData %>% 
   filter(!is.na(Biovolume_uM3_L)) %>% 
   group_by(NRScode) %>% 
-  summarise(AvgCellVol_um3 = mean(sum(Biovolume_uM3_L)/sum(Cells_L)))
+  summarise(AvgCellVol_um3 = mean(sum(Biovolume_uM3_L)/sum(Cells_L)),
+            .groups = "drop")
 
 # Diversity (phyto, diatoms, dinos)
 # stick to abundance data here or we lose all the data that Pru counted which we don't have counts for.
@@ -196,13 +212,15 @@ NP <- PhytoData %>%
   filter(TaxonGroup != 'Other' & Species != "spp." & !is.na(Species) & !grepl("cf.", Species) & !grepl("grp", Species)) %>% 
   mutate(TaxonName = paste0(Genus," ", word(Species,1))) %>% # bin complexes 
   group_by(NRScode) %>% 
-  summarise(NoPhytoSpecies_Sample = n())
+  summarise(NoPhytoSpecies_Sample = n(),
+            .groups = "drop")
 
 ShannonPhytoDiversity <- PhytoData %>% 
   filter(TaxonGroup != 'Other' & Species != "spp." & !is.na(Species) & !grepl("cf.", Species) & !grepl("grp", Species)) %>% 
   mutate(TaxonName = paste0(Genus," ", word(Species,1))) %>% # bin complexes 
   group_by(NRScode, TaxonName) %>% 
-  summarise(Pdata = sum(Cells_L, na.rm = TRUE)) %>%
+  summarise(Pdata = sum(Cells_L, na.rm = TRUE),
+            .groups = "drop") %>%
   pivot_wider(values_from = Pdata, names_from = TaxonName, values_fill = 0) %>% 
   ungroup() %>%
   select(-NRScode) %>%
@@ -216,13 +234,15 @@ NDia <- PhytoData %>%
   filter(TaxonGroup %in% c('Centric diatom', 'Pennate diatom') & Species != "spp." & !is.na(Species) & !grepl("cf.", Species) & !grepl("grp", Species)) %>% 
   mutate(TaxonName = paste0(Genus," ", word(Species,1))) %>% # bin complexes 
   group_by(NRScode) %>% 
-  summarise(NoDiatomSpecies_Sample = n())
+  summarise(NoDiatomSpecies_Sample = n(),
+            .groups = "drop")
 
 ShannonDiatomDiversity <- PhytoData %>% 
   filter(TaxonGroup %in% c('Centric diatom', 'Pennate diatom') & Species != "spp." & !is.na(Species) & !grepl("cf.", Species) & !grepl("grp", Species)) %>% 
   mutate(TaxonName = paste0(Genus," ", word(Species,1))) %>% # bin complexes 
   group_by(NRScode, TaxonName) %>% 
-  summarise(Diadata = sum(Cells_L, na.rm = TRUE)) %>%
+  summarise(Diadata = sum(Cells_L, na.rm = TRUE),
+            .groups = "drop") %>%
   pivot_wider(values_from = Diadata, names_from = TaxonName, values_fill = 0) %>% 
   ungroup() %>%
   select(-NRScode) %>%
@@ -236,13 +256,15 @@ NDino <-  PhytoData %>%
   filter(TaxonGroup == 'Dinoflagellate' & Species != "spp." & !is.na(Species) & !grepl("cf.", Species) & !grepl("grp", Species)) %>% 
   mutate(TaxonName = paste0(Genus," ", word(Species,1))) %>% # bin complexes 
   group_by(NRScode) %>% 
-  summarise(NoDinoSpecies_Sample = n())
+  summarise(NoDinoSpecies_Sample = n(),
+            .groups = "drop")
 
 ShannonDinoDiversity <- phytodata %>% 
   filter(TaxonGroup  == 'Dinoflagellate' & Species != "spp." & !is.na(Species) & !grepl("cf.", Species) & !grepl("grp", Species)) %>% 
   mutate(TaxonName = paste0(Genus," ", word(Species,1))) %>% # bin complexes 
   group_by(NRScode, TaxonName) %>% 
-  summarise(Dinodata = sum(Cells_L, na.rm = TRUE)) %>%
+  summarise(Dinodata = sum(Cells_L, na.rm = TRUE),
+            .groups = "drop") %>%
   pivot_wider(values_from = Dinodata, names_from = TaxonName, values_fill = 0) %>%
   ungroup() %>%
   select(-NRScode) %>%
