@@ -9,7 +9,6 @@
 suppressPackageStartupMessages({
   library(tidyverse)
   library(lubridate)
-  library(reshape)
   library(data.table)
 })
 
@@ -389,10 +388,11 @@ for (i in 1:nlevels(cprCop2$Species)) {
 cprCop1 <- cprCop1 %>% 
   group_by(Route, Latitude, Longitude, SampleDateUTC, Year, Month, Day, Time_24hr, Species) %>%
   summarise(ZAbun_m3 = max(ZAbun_m3), .groups = "drop") %>% 
-  arrange(-desc(Species)) %>% as.data.frame() 
+  arrange(-desc(Species)) %>% 
+  as.data.frame() 
 # select maximum value of duplicates, but leave -999 for all other occurrences as not regularly identified
 
-cprCop <-  cprCop1 %>% 
+cprCop <- cprCop1 %>% 
   pivot_wider(names_from = Species, values_from = ZAbun_m3, values_fill = list(ZAbun_m3 = 0)) %>% 
   arrange(desc(SampleDateUTC)) 
 
