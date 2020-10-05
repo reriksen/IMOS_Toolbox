@@ -13,6 +13,6 @@ TestData* is a test data file (NRS Zooplankton Higher Trophic Levels) as a sourc
 
 **NOTE:** If you are on a Windows PC - You will need to install a development version of ncdf4 which allows the use of OpenDAP. Please run ```devtools::install_github('mdsumner/ncdf4')``` to install or see https://github.com/mdsumner/ncdf4 for more information.
 
-### Planknton Data
+### Plankton Data
 
 In progress. Code will take the low level files from the AODN Portal and create merged products, indices etc.
