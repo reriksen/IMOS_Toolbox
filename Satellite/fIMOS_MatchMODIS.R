@@ -120,7 +120,8 @@ fIMOS_MatchMODIS <- function(dat, pr, ...) {
   for (j in 1:length(pr)) {
     nm <- paste0(pr[j],"_",res_temp)
     dat <- dat %>% 
-      mutate(!!nm := mat[,j])
+      mutate(!!nm := mat[,j]) %>% 
+      mutate_all(~ replace(., is.na(.), NA)) # Replace NaN with NA
   }
   return(dat)
 }
