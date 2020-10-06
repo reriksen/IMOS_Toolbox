@@ -1,4 +1,4 @@
-# This software downloads IMOS satellite data at a vector of 
+# This software downloads IMOS satellite data from GHRSST at a vector of 
 # given locations and times using the OPeNDAP protocol.
 # A nice website with a description is here:
 # https://opendap.github.io/documentation/QuickStart.html
@@ -21,14 +21,14 @@
 # Monthly climatology (1mNy), Annual climatology (12mNy)
 
 # Possible products to download are: 
-# "sst_quality", "sst", "picop_brewin2012in", "picop_brewin2010at", "par", 
-# "owtd", "npp_vgpm_eppley_oc3", "npp_vgpm_eppley_gsm", "nanop_brewin2012in",
-# "nanop_brewin2010at", "l2_flags", "ipar", "dt", "chl_oci", "chl_oc3", "chl_gsm", "K_490"
+# dt_analysis, l2p_flags, quality_level, satellite_zenith_angle, sea_ice_fraction, sea_ice_fraction_dtime_from_sst, 
+# sea_surface_temperature, sea_surface_temperature_day_night, sses_bias, sses_count,sses_standard_deviation,
+# sst_count, sst_dtime, sst_mean, sst_standard_deviation, wind_speed, wind_speed_dtime_from_sst,
 
 # Options for res_temp
 # "1d", "1m", "1y", "1mNy", "12mNy"
 
-fIMOS_MatchGHRSST <- function(dat, ...) {
+fIMOS_MatchGHRSST <- function(dat, pr, ...) {
   library(stringr) #install.packages("stringr")  
   library(dplyr) #install.packages("dplyr")
   library(ncdf4) #install.packages("ncdf4")
@@ -59,7 +59,7 @@ fIMOS_MatchGHRSST <- function(dat, ...) {
   }
   
   # Create a NA matrix of size length(Latitude) x no_products and fill it incrementally
-  # mat <- vector(data=NA, nrow=length(dat$Latitude))
+  mat <- matrix(data=NA,nrow=length(dat$Latitude),ncol=length(pr))
   
   pb <- txtProgressBar(min = 0, max = length(dat$Latitude), style = 3)
   for (i in 1:length(dat$Latitude)) { # Loop through all rows in the data for each variable you want
@@ -73,7 +73,12 @@ fIMOS_MatchGHRSST <- function(dat, ...) {
       # http://rs-data1-mel.csiro.au/thredds/dodsC/imos-srs/sst/ghrsst/L3S-1d/dn/1994/19941231092000-ABOM-L3S_GHRSST-SSTfnd-AVHRR_D-1d_dn-v02.0-fv02.0.nc
       
       if (str_detect(res_temp,"1d")){
-        imos_url <- paste0(url_base, dat$Year[i],"/",dat$Year[i],mth,dy,"092000-ABOM-L3S_GHRSST-SSTfnd-AVHRR_D-1d_dn-v02.0-fv02.0.nc")
+        if(dat$Year[i] <= 2014){
+          imos_url <- paste0(url_base, dat$Year[i],"/",dat$Year[i],mth,dy,"092000-ABOM-L3S_GHRSST-SSTfnd-AVHRR_D-1d_dn-v02.0-fv02.0.nc#fillmismatch")} # Different fv codes for each year range.
+        else {
+          imos_url <- paste0(url_base, dat$Year[i],"/",dat$Year[i],mth,dy,"092000-ABOM-L3S_GHRSST-SSTfnd-AVHRR_D-1d_dn-v02.0-fv01.0.nc#fillmismatch")
+        }
+        
         vr <- pr[j]
       }
       if (str_detect(res_temp,"1m")){
@@ -93,16 +98,17 @@ fIMOS_MatchGHRSST <- function(dat, ...) {
         vr <- paste0(pr[j],"_mean_mean")
       }
       
-      
       tryCatch({ # Not all dates will exist
         nc <- nc_open(imos_url, write=FALSE, readunlim=TRUE, verbose=FALSE)
+        
         # Approximate nearest neighbour
         idx_lon <- ann(as.matrix(nc$dim$lon$vals), as.matrix(dat$Longitude[i]), k = 1, verbose = FALSE)$knnIndexDist[,1]
         idx_lat <- ann(as.matrix(nc$dim$lat$vals), as.matrix(dat$Latitude[i]), k = 1, verbose = FALSE)$knnIndexDist[,1]
         cnt <- c(1,1,1)
+        
         if (res_spat > 1) { # If more than 1x1 pixel is requested we adjust the idx by res_spat/2 and count by res_spa
           idx_lon <- idx_lon - floor(res_spat/2)
-          idx_lon <- idx_lon - floor(res_spat/2)
+          idx_lat <- idx_lat - floor(res_spat/2)
           cnt <- c(res_spat, res_spat, 1)
         }
         out <- ncvar_get(nc, vr, start=c(idx_lon, idx_lat, 1), count = cnt)
@@ -111,17 +117,18 @@ fIMOS_MatchGHRSST <- function(dat, ...) {
       }, 
       error = function(cond) {
         print(paste0('Date (',dat$Day[i],'/',dat$Month[i],'/',dat$Year[i],') not available.'))
-        }
+      }
       )
     }
     setTxtProgressBar(pb, i)
   }
   
-  # Now lookp through and assign columns to the variables
+  # Now look through and assign columns to the variables
   for (j in 1:length(pr)) {
     nm <- paste0(pr[j],"_",res_temp)
     dat <- dat %>% 
-      mutate(!!nm := mat[,j])
+      mutate(!!nm := mat[,j]) %>% 
+      mutate_all(~ replace(., is.na(.), NA)) # Replace NaN with NA
   }
   return(dat)
 }
