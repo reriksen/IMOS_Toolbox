@@ -1,6 +1,7 @@
 library(readr)
 library(dplyr)
 
+source("fIMOS_MatchGHRSST.R")
 source("fIMOS_MatchMODIS.R")
 source("fIMOS_MatchAltimetry.R")
 
@@ -29,12 +30,20 @@ dat <- dat %>%
 #         "owtd", "npp_vgpm_eppley_oc3", "npp_vgpm_eppley_gsm", "nanop_brewin2012in",
 #         "nanop_brewin2010at", "l2_flags", "ipar", "dt", "chl_oc3", "chl_gsm", "K_490")
 
-pr <- c("sst", "chl_oc3")
+pr <- c("sst", "chl_oci")
 res_temp <- "1d"
 res_spat <- 10 # Return the average of res_spat x res_spat pixels
 
 # Get MODIS Data
 dat <- fIMOS_MatchMODIS(dat, pr, res_temp, res_spat)
+
+# Get GHRSST SST Data
+res_temp <- "1d"
+res_spat <- 10 # Return the average of res_spat x res_spat pixels
+
+dat <- fIMOS_MatchGHRSST(dat, res_temp, res_spat)
+
+
 
 # Get Altimetry
 dat <- fIMOS_MatchAltimetry(dat, res_spat)

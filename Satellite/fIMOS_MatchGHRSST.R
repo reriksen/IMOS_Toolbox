@@ -28,7 +28,7 @@
 # Options for res_temp
 # "1d", "1m", "1y", "1mNy", "12mNy"
 
-fIMOS_MatchMODIS <- function(dat, pr, ...) {
+fIMOS_MatchGHRSST <- function(dat, ...) {
   library(stringr) #install.packages("stringr")  
   library(dplyr) #install.packages("dplyr")
   library(ncdf4) #install.packages("ncdf4")
@@ -59,7 +59,7 @@ fIMOS_MatchMODIS <- function(dat, pr, ...) {
   }
   
   # Create a NA matrix of size length(Latitude) x no_products and fill it incrementally
-  mat <- matrix(data=NA,nrow=length(dat$Latitude),ncol=length(pr))
+  # mat <- vector(data=NA, nrow=length(dat$Latitude))
   
   pb <- txtProgressBar(min = 0, max = length(dat$Latitude), style = 3)
   for (i in 1:length(dat$Latitude)) { # Loop through all rows in the data for each variable you want
@@ -69,10 +69,11 @@ fIMOS_MatchMODIS <- function(dat, pr, ...) {
     dy <- str_pad(dat$Day[i],2,"left",pad="0")
     
     for (j in 1:length(pr)) { # Loop through all rows in the data for each variable you want
-      url_base <- paste0("http://rs-data1-mel.csiro.au/thredds/dodsC/imos-srs/oc/aqua/",res_temp,"/") # Base URL
+      url_base <- paste0("http://rs-data1-mel.csiro.au/thredds/dodsC/imos-srs/sst/ghrsst/L3S-",res_temp,"/dn/") # Base URL
+      # http://rs-data1-mel.csiro.au/thredds/dodsC/imos-srs/sst/ghrsst/L3S-1d/dn/1994/19941231092000-ABOM-L3S_GHRSST-SSTfnd-AVHRR_D-1d_dn-v02.0-fv02.0.nc
       
       if (str_detect(res_temp,"1d")){
-        imos_url <- paste0(url_base, dat$Year[i],"/",mth,"/A",dat$Year[i],mth,dy,".L2OC_BASE.aust.",pr[j],".nc")
+        imos_url <- paste0(url_base, dat$Year[i],"/",dat$Year[i],mth,dy,"092000-ABOM-L3S_GHRSST-SSTfnd-AVHRR_D-1d_dn-v02.0-fv02.0.nc")
         vr <- pr[j]
       }
       if (str_detect(res_temp,"1m")){
