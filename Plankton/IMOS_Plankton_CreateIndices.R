@@ -11,6 +11,9 @@ suppressPackageStartupMessages({
   library(lubridate)
   library(vegan)
   library(data.table)  
+  # install.packages("devtools")
+  # devtools::install_github("mdsumner/ncdf4")
+  library(ncdf4)
 })
 
 source("IMOS_Plankton_functions.R")
@@ -46,6 +49,7 @@ CTD <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_CTD.csv"), na = "(null)",
 # Access satellite data for the sample dates using the IMOS_Toolbox
 source("../Satellite/fIMOS_MatchAltimetry.R")
 source("../Satellite/fIMOS_MatchMODIS.R")
+source("../Satellite/fIMOS_MatchGHRSST.R")
 
 # If on Windows you will need to install a development 
 # version of ncdf4 which allows the use of OpenDAP
@@ -56,24 +60,30 @@ if(.Platform$OS.type == "windows") {
   see 'https://github.com/mdsumner/ncdf4' for more information.")
 }
 
-# install.packages("devtools")
-# devtools::install_github("mdsumner/ncdf4")
-library(ncdf4)
-
 NRSdat <- NRSTrips %>% 
   rename(Date = SampleDateLocal)
 
+# Get GHRSST SST Data
+# Possible products to download are: 
+# dt_analysis, l2p_flags, quality_level, satellite_zenith_angle, sea_ice_fraction, sea_ice_fraction_dtime_from_sst, 
+# sea_surface_temperature, sea_surface_temperature_day_night, sses_bias, sses_count,sses_standard_deviation,
+# sst_count, sst_dtime, sst_mean, sst_standard_deviation, wind_speed, wind_speed_dtime_from_sst,
+res_temp <- "1d"
+res_spat <- 10 # Return the average of res_spat x res_spat pixels
+pr <- ("sea_surface_temperature")
+NRSdat <- fIMOS_MatchGHRSST(NRSdat, pr, res_temp, res_spat)
+
+# Get MODIS Data
 # Possible products
 # pr <- c("sst_quality", "sst", "picop_brewin2012in", "picop_brewin2010at", "par", 
 #         "owtd", "npp_vgpm_eppley_oc3", "npp_vgpm_eppley_gsm", "nanop_brewin2012in",
 #         "nanop_brewin2010at", "l2_flags", "ipar", "dt", "chl_oc3", "chl_gsm", "K_490")
 
-pr <- c("sst", "chl_oci")
+pr <- c("chl_oci")
 res_temp <- "1d"
 res_spat <- 10 # Return the average of res_spat x res_spat pixels
-
-# Get MODIS Data
 NRSdat <- fIMOS_MatchMODIS(NRSdat, pr, res_temp, res_spat)
+
 
 # Get Altimetry (Gridded sea level anomaly, Gridded sea level, Surface geostrophic velocity)
 NRSdat <- fIMOS_MatchAltimetry(NRSdat, res_spat)
