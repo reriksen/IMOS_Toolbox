@@ -101,7 +101,7 @@ fIMOS_MatchMODIS <- function(dat, pr, ...) {
         cnt <- c(1,1,1)
         if (res_spat > 1) { # If more than 1x1 pixel is requested we adjust the idx by res_spat/2 and count by res_spa
           idx_lon <- idx_lon - floor(res_spat/2)
-          idx_lon <- idx_lon - floor(res_spat/2)
+          idx_lat <- idx_lat - floor(res_spat/2)
           cnt <- c(res_spat, res_spat, 1)
         }
         out <- ncvar_get(nc, vr, start=c(idx_lon, idx_lat, 1), count = cnt)
