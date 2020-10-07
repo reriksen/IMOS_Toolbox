@@ -29,13 +29,15 @@ options(stringsAsFactors = FALSE)   ### the default from R 4.0.0 on
 
 source("../Plankton/IMOS_Plankton_functions.R")
 
-# access hourly time series product files from IMOS thredds server. If you want to only use that file you can save it to a location and change the address below
+# access hourly time series product files from IMOS thredds server. 
+# If the web links don't work (windows quirks) you may want to download and save it, change the address below to that location
 # if these break then the file has probably been updated and the name changed - annoying .....
+# no similar file available for PH100 / PHB checking this???
 
 #PHB <- paste0("http://thredds.aodn.org.au/thredds/dodsC/IMOS/ANMN/NSW/PH100/hourly_timeseries/IMOS_ANMN-NSW_TZ_20091029_PH100_FV01_TEMP-aggregated-timeseries_END-20190612_C-20190819.nc")
 MAI <- paste0("http://thredds.aodn.org.au/thredds/dodsC/IMOS/ANMN/NRS/NRSMAI/hourly_timeseries/IMOS_ANMN-NRS_BOSTUZ_20080411_NRSMAI_FV02_hourly-timeseries_END-20200522_C-20201007.nc")
-NSI <- paste0("IMOS_ANMN-NRS_BOSTZ_20101213_NRSNSI_FV02_hourly-timeseries_END-20191214_C-20201007.nc")
-ROT <- paste0("IMOS_ANMN-NRS_STZ_20081120_NRSROT_FV02_hourly-timeseries_END-20200703_C-20201007.nc")
+NSI <- paste0("http://thredds.aodn.org.au/thredds/dodsC/IMOS/ANMN/NRS/NRSMAI/hourly_timeseries/IMOS_ANMN-NRS_BOSTZ_20101213_NRSNSI_FV02_hourly-timeseries_END-20191214_C-20201007.nc")
+ROT <- paste0("http://thredds.aodn.org.au/thredds/dodsC/IMOS/ANMN/NRS/NRSMAI/hourly_timeseries/IMOS_ANMN-NRS_STZ_20081120_NRSROT_FV02_hourly-timeseries_END-20200703_C-20201007.nc")
 KAI <- paste0("http://thredds.aodn.org.au/thredds/dodsC/IMOS/ANMN/NRS/NRSKAI/hourly_timeseries/IMOS_ANMN-NRS_BOSTZ_20080212_NRSKAI_FV02_hourly-timeseries_END-20200527_C-20201007.nc")
 
 # create a list with the filenames and station codes
@@ -106,7 +108,7 @@ timeseriesplots <- lapply(X = stations, FUN = function(f) {
   
   nc_close(nc)
   
-  df_sum <- df %>% mutate(DepthBin = cut(Depth, breaks = c(0, 20, 40, 60, 80, 100)),
+  df_sum <- df %>% mutate(DepthBin = cut(Depth, breaks = c(0, 20, 40, 60, 80, 100)), # separate into depth bins
                           DepthBin = recode(DepthBin, "(0,20]" = "0 - 20m",
                                                     "(20,40]" = "20 - 40m",
                                                     "(40,60]" = "40 - 60m",

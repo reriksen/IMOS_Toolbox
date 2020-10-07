@@ -37,7 +37,7 @@ PHB <- paste0("http://thredds.aodn.org.au/thredds/dodsC/IMOS/ANMN/NSW/PH100/grid
 MAI <- paste0("http://thredds.aodn.org.au/thredds/dodsC/IMOS/ANMN/NRS/NRSMAI/gridded_timeseries/IMOS_ANMN-NRS_TZ_20080411_NRSMAI_FV02_TEMP-gridded-timeseries_END-20200522_C-20201007.nc")
 NSI <- paste0("http://thredds.aodn.org.au/thredds/dodsC/IMOS/ANMN/NRS/NRSNSI/gridded_timeseries/IMOS_ANMN-NRS_TZ_20101213_NRSNSI_FV02_TEMP-gridded-timeseries_END-20191214_C-20201007.nc")
 ROT <- paste0("http://thredds.aodn.org.au/thredds/dodsC/IMOS/ANMN/NRS/NRSROT/gridded_timeseries/IMOS_ANMN-NRS_TZ_20081120_NRSROT_FV02_TEMP-gridded-timeseries_END-20200703_C-20201007.nc")
-KAI <- paste0("http://thredds.aodn.org.au/thredds/dodsC/IMOS/ANMN/NRS/NRSKAI/gridded_timeseries/IMOS_ANMN-NRS_TZ_20080212_NRSKAI_FV02_TEMP-gridded-timeseries_END-20191127_C-20200526.nc")
+KAI <- paste0("http://thredds.aodn.org.au/thredds/dodsC/IMOS/ANMN/NRS/NRSKAI/gridded_timeseries/IMOS_ANMN-NRS_TZ_20080212_NRSKAI_FV02_TEMP-gridded-timeseries_END-20200527_C-20201007.nc")
 
 # create a list with the filenames and station codes
 stations <- list("PHB" = PHB, "MAI" = MAI, "NSI" = NSI, "KAI" = KAI, "ROT" = ROT)
