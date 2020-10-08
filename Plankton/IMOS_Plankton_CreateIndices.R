@@ -27,9 +27,9 @@ outD <- "Output"
 # ensure we have all trips accounted for 
 # note there are circumstances where a trip won't have a phyto and a zoo samples due to loss of sample etc.
 
-NRSdat <- get_NRSTrips()
+NRSdat <- get_NRSTrips() %>% select(-SampleDepth_m) %>% distinct()
 
-dNRSdat <- distinct(NRSdat, NRScode, .keep_all = TRUE) %>%  # Distinct rows for satellite
+dNRSdat <- distinct(NRSdat, NRScode, .keep_all = TRUE) %>%  # Distinct rows for satellite, should be anyway
   rename(Date = SampleDateLocal) %>% 
   select(NRScode, Date, Latitude, Longitude)
 
@@ -42,9 +42,8 @@ CTD <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_CTD.csv"), na = "(null)",
          CTDTemperature = TEMP, CTDPAR_umolm2s = PAR,
          CTDConductivity_sm = CNDC, CTDSpecificConductivity_Sm = SPEC_CNDC, CTDSalinity = PSAL, 
          CTDTurbidity_ntu = TURB, CTDChlF_mgm3 = CHLF) %>%
-  mutate(SampleDepth_m = as.character(SampleDepth_m, 0)) %>% 
-  filter(SampleDepth_m <11) %>% 
-  group_by(NRScode, SampleDepth_m) %>% 
+  filter(SampleDepth_m <11) %>% # take average of top 10m as a surface value for SST and CHL
+  group_by(NRScode) %>% 
   summarise(CTD_SST_C = mean(CTDTemperature, na.rm = TRUE),
             CTDChlF_mgm3 = mean(CTDChlF_mgm3, na.rm = TRUE),
             .groups = "drop") %>%
@@ -91,7 +90,7 @@ CTD <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_CTD.csv"), na = "(null)",
 
 # Nutrient data
 Nuts <- Chemistry %>% 
-  group_by(NRScode, SampleDepth_m) %>% 
+  group_by(NRScode) %>% 
   summarise(Silicate_umol_L = mean(Silicate_umol_L, na.rm = TRUE),
             Phosphate_umol_L = mean(Phosphate_umol_L, na.rm = TRUE),
             Ammonium_umol_L = mean(Ammonium_umol_L, na.rm = TRUE),
@@ -287,21 +286,21 @@ DinoEven <- NDino %>%
 
 # make indices table (nrows must always equal nrows of Trips)
 Indices <-  NRSdat  %>%
-  left_join(TZoo, by = c("NRScode", "SampleDepth_m")) %>%
-  left_join(TCope, by = c("NRScode", "SampleDepth_m")) %>%
-  left_join(ZBiomass %>% by = c("NRScode", "SampleDepth_m")) %>%
-  left_join(ACopeSize, by = c("NRScode", "SampleDepth_m")) %>%
-  left_join(HCrat %>% select(-c('CO', 'CC')), c("NRScode", "SampleDepth_m")) %>% 
-  left_join(CopepodEvenness,  by = c("NRScode", "SampleDepth_m")) %>%
-  left_join(PhytoC, by = c("NRScode", "SampleDepth_m")) %>%
-  left_join(TPhyto, by = c("NRScode", "SampleDepth_m")) %>%
-  left_join(DDrat %>% select(-c('Diatom', 'Dinoflagellate')), by = c("NRScode", "SampleDepth_m")) %>%
-  left_join(AvgCellVol, by = c("NRScode", "SampleDepth_m")) %>%
-  left_join(PhytoEven, by = c("NRScode", "SampleDepth_m")) %>%
-  left_join(DiaEven, by = c("NRScode", "SampleDepth_m")) %>% 
-  left_join(DinoEven, by = c("NRScode", "SampleDepth_m")) %>%   
-  left_join(CTD, by = c("NRScode", "SampleDepth_m")) %>%
-  left_join(Nuts, by = c("NRScode", "SampleDepth_m")) 
+  left_join(TZoo, by = ("NRScode")) %>%
+  left_join(TCope, by = ("NRScode")) %>%
+  left_join(ZBiomass %>% select(NRScode, Biomass_mgm3), by = ("NRScode")) %>%
+  left_join(ACopeSize, by = ("NRScode")) %>%
+  left_join(HCrat %>% select(-c('CO', 'CC')), ("NRScode")) %>%
+  left_join(CopepodEvenness,  by = ("NRScode")) %>%
+  left_join(PhytoC, by = ("NRScode")) %>%
+  left_join(TPhyto, by = ("NRScode")) %>%
+  left_join(DDrat %>% select(-c('Diatom', 'Dinoflagellate')), by = ("NRScode")) %>%
+  left_join(AvgCellVol, by = ("NRScode")) %>%
+  left_join(PhytoEven, by = ("NRScode")) %>%
+  left_join(DiaEven, by = ("NRScode")) %>%
+  left_join(DinoEven, by = ("NRScode")) %>%  
+  left_join(CTD, by = ("NRScode")) %>%
+  left_join(Nuts, by = ("NRScode")) 
 # %>% 
 #   left_join(GHRSST %>% select(-c("Longitude", "Latitude", "Date")), by = ("NRScode")) %>% 
 #   left_join(MODIS %>% select(-c("Longitude", "Latitude", "Date")), by = ("NRScode")) %>% 
