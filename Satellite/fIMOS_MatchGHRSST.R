@@ -78,25 +78,25 @@ fIMOS_MatchGHRSST <- function(dat, pr, ...) {
         else {
           imos_url <- paste0(url_base, dat$Year[i],"/",dat$Year[i],mth,dy,"092000-ABOM-L3S_GHRSST-SSTfnd-AVHRR_D-1d_dn-v02.0-fv01.0.nc#fillmismatch")
         }
-        
         vr <- pr[j]
       }
-      if (str_detect(res_temp,"1m")){
-        imos_url <- paste0(url_base, dat$Year[i],"/",dat$Year[i],mth,".",pr[j],".nc")
-        vr <- paste0(pr[j],"_mean")
-      }
-      if (str_detect(res_temp,"1y")){
-        imos_url <- paste0(url_base,dat$Year[i],".",pr[j],"_mean.nc4")
-        vr <- paste0(pr[j],"_mean_mean")
-      }
-      if (str_detect(res_temp, "1mNy")){
-        imos_url <- paste0(url_base,"2003-2014.",mth,".",pr[j],"_mean.nc4")
-        vr <- paste0(pr[j],"_mean_mean")
-      }
-      if (str_detect(res_temp, "12mNy")){
-        imos_url <- paste0(url_base,"2003-2014x01-12.",pr[j],"_mean_mean.nc4")
-        vr <- paste0(pr[j],"_mean_mean")
-      }
+      
+      # if (str_detect(res_temp,"1m")){
+      #   imos_url <- paste0(url_base, dat$Year[i],"/",dat$Year[i],mth,".",pr[j],".nc")
+      #   vr <- paste0(pr[j],"_mean")
+      # }
+      # if (str_detect(res_temp,"1y")){
+      #   imos_url <- paste0(url_base,dat$Year[i],".",pr[j],"_mean.nc4")
+      #   vr <- paste0(pr[j],"_mean_mean")
+      # }
+      # if (str_detect(res_temp, "1mNy")){
+      #   imos_url <- paste0(url_base,"2003-2014.",mth,".",pr[j],"_mean.nc4")
+      #   vr <- paste0(pr[j],"_mean_mean")
+      # }
+      # if (str_detect(res_temp, "12mNy")){
+      #   imos_url <- paste0(url_base,"2003-2014x01-12.",pr[j],"_mean_mean.nc4")
+      #   vr <- paste0(pr[j],"_mean_mean")
+      # }
       
       tryCatch({ # Not all dates will exist
         nc <- nc_open(imos_url, write=FALSE, readunlim=TRUE, verbose=FALSE)
@@ -121,6 +121,9 @@ fIMOS_MatchGHRSST <- function(dat, pr, ...) {
       )
     }
     setTxtProgressBar(pb, i)
+    cat("\n")
+    print(i)
+    nc_close(nc)
   }
   
   # Now look through and assign columns to the variables

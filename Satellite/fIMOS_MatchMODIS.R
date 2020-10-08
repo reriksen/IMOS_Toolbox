@@ -114,6 +114,9 @@ fIMOS_MatchMODIS <- function(dat, pr, ...) {
       )
     }
     setTxtProgressBar(pb, i)
+    cat("\n")
+    print(i)
+    nc_close(nc)
   }
   
   # Now lookp through and assign columns to the variables

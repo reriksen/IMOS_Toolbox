@@ -49,35 +49,66 @@ fIMOS_MatchAltimetry <- function(dat, ...) {
     dy <- str_pad(dat$Day[i],2,"left",pad="0")
     yr <- dat$Year[i]
     
-    url_base = 'http://thredds.aodn.org.au/thredds/dodsC/IMOS/OceanCurrent/GSLA/DM00/yearfiles/';
+    url_base = 'http://thredds.aodn.org.au/thredds/dodsC/IMOS/OceanCurrent/GSLA/DM01/yearfiles/';
+    # 
+    # if (yr==2019) {file = 'IMOS_OceanCurrent_HV_2019_C-20190605T233144Z.nc.gz'}
+    # if (yr==2018) {file = 'IMOS_OceanCurrent_HV_2018_C-20190129T223442Z.nc.gz'}
+    # if (yr==2017) {file = 'IMOS_OceanCurrent_HV_2017_C-20180129T224442Z.nc.gz'}	
+    # if (yr==2016) {file = 'IMOS_OceanCurrent_HV_2016_C-20170129T222646Z.nc.gz'}
+    # if (yr==2015) {file = 'IMOS_OceanCurrent_HV_2015_C-20160903T062732Z.nc.gz'}
+    # if (yr==2014) {file = 'IMOS_OceanCurrent_HV_2014_C-20150413T032427Z.nc.gz'}
+    # if (yr==2013) {file = 'IMOS_OceanCurrent_HV_2013_C-20141028T045015Z.nc.gz'}
+    # if (yr==2012) {file = 'IMOS_OceanCurrent_HV_2012_C-20140106T022022Z.nc.gz'}
+    # if (yr==2011) {file = 'IMOS_OceanCurrent_HV_2011_C-20141028T044752Z.nc.gz'}
+    # if (yr==2010) {file = 'IMOS_OceanCurrent_HV_2010_C-20140120T231433Z.nc.gz'}
+    # if (yr==2009) {file = 'IMOS_OceanCurrent_HV_2009_C-20140120T232133Z.nc.gz'}
+    # if (yr==2008) {file = 'IMOS_OceanCurrent_HV_2008_C-20150521T043304Z.nc.gz'}
+    # if (yr==2007) {file = 'IMOS_OceanCurrent_HV_2007_C-20150521T042748Z.nc.gz'}
+    # if (yr==2006) {file = 'IMOS_OceanCurrent_HV_2006_C-20150521T042256Z.nc.gz'}
+    # if (yr==2005) {file = 'IMOS_OceanCurrent_HV_2005_C-20150521T041806Z.nc.gz'}
+    # if (yr==2004) {file = 'IMOS_OceanCurrent_HV_2004_C-20150521T041319Z.nc.gz'}
+    # if (yr==2003) {file = 'IMOS_OceanCurrent_HV_2003_C-20150521T040831Z.nc.gz'}
+    # if (yr==2002) {file = 'IMOS_OceanCurrent_HV_2002_C-20150521T040330Z.nc.gz'}
+    # if (yr==2001) {file = 'IMOS_OceanCurrent_HV_2001_C-20150521T035914Z.nc.gz'}
+    # if (yr==2000) {file = 'IMOS_OceanCurrent_HV_2000_C-20150521T035421Z.nc.gz'}
+    # if (yr==1999) {file = 'IMOS_OceanCurrent_HV_1999_C-20150521T034853Z.nc.gz'}
+    # if (yr==1998) {file = 'IMOS_OceanCurrent_HV_1998_C-20150521T034357Z.nc.gz'}
+    # if (yr==1997) {file = 'IMOS_OceanCurrent_HV_1997_C-20150521T033755Z.nc.gz'}
+    # if (yr==1996) {file = 'IMOS_OceanCurrent_HV_1996_C-20150521T033049Z.nc.gz'}
+    # if (yr==1995) {file = 'IMOS_OceanCurrent_HV_1995_C-20150521T032432Z.nc.gz'}
+    # if (yr==1994) {file = 'IMOS_OceanCurrent_HV_1994_C-20150521T031623Z.nc.gz'}
+    # if (yr==1993) {file = 'IMOS_OceanCurrent_HV_1993_C-20150521T030649Z.nc.gz'}
+    # 
+    # 
     
-    if (yr==2019) {file = 'IMOS_OceanCurrent_HV_2019_C-20190605T233144Z.nc.gz'}
-    if (yr==2018) {file = 'IMOS_OceanCurrent_HV_2018_C-20190129T223442Z.nc.gz'}
-    if (yr==2017) {file = 'IMOS_OceanCurrent_HV_2017_C-20180129T224442Z.nc.gz'}	
-    if (yr==2016) {file = 'IMOS_OceanCurrent_HV_2016_C-20170129T222646Z.nc.gz'}
-    if (yr==2015) {file = 'IMOS_OceanCurrent_HV_2015_C-20160903T062732Z.nc.gz'}
-    if (yr==2014) {file = 'IMOS_OceanCurrent_HV_2014_C-20150413T032427Z.nc.gz'}
-    if (yr==2013) {file = 'IMOS_OceanCurrent_HV_2013_C-20141028T045015Z.nc.gz'}
-    if (yr==2012) {file = 'IMOS_OceanCurrent_HV_2012_C-20140106T022022Z.nc.gz'}
-    if (yr==2011) {file = 'IMOS_OceanCurrent_HV_2011_C-20141028T044752Z.nc.gz'}
-    if (yr==2010) {file = 'IMOS_OceanCurrent_HV_2010_C-20140120T231433Z.nc.gz'}
-    if (yr==2009) {file = 'IMOS_OceanCurrent_HV_2009_C-20140120T232133Z.nc.gz'}
-    if (yr==2008) {file = 'IMOS_OceanCurrent_HV_2008_C-20150521T043304Z.nc.gz'}
-    if (yr==2007) {file = 'IMOS_OceanCurrent_HV_2007_C-20150521T042748Z.nc.gz'}
-    if (yr==2006) {file = 'IMOS_OceanCurrent_HV_2006_C-20150521T042256Z.nc.gz'}
-    if (yr==2005) {file = 'IMOS_OceanCurrent_HV_2005_C-20150521T041806Z.nc.gz'}
-    if (yr==2004) {file = 'IMOS_OceanCurrent_HV_2004_C-20150521T041319Z.nc.gz'}
-    if (yr==2003) {file = 'IMOS_OceanCurrent_HV_2003_C-20150521T040831Z.nc.gz'}
-    if (yr==2002) {file = 'IMOS_OceanCurrent_HV_2002_C-20150521T040330Z.nc.gz'}
-    if (yr==2001) {file = 'IMOS_OceanCurrent_HV_2001_C-20150521T035914Z.nc.gz'}
-    if (yr==2000) {file = 'IMOS_OceanCurrent_HV_2000_C-20150521T035421Z.nc.gz'}
-    if (yr==1999) {file = 'IMOS_OceanCurrent_HV_1999_C-20150521T034853Z.nc.gz'}
-    if (yr==1998) {file = 'IMOS_OceanCurrent_HV_1998_C-20150521T034357Z.nc.gz'}
-    if (yr==1997) {file = 'IMOS_OceanCurrent_HV_1997_C-20150521T033755Z.nc.gz'}
-    if (yr==1996) {file = 'IMOS_OceanCurrent_HV_1996_C-20150521T033049Z.nc.gz'}
-    if (yr==1995) {file = 'IMOS_OceanCurrent_HV_1995_C-20150521T032432Z.nc.gz'}
-    if (yr==1994) {file = 'IMOS_OceanCurrent_HV_1994_C-20150521T031623Z.nc.gz'}
-    if (yr==1993) {file = 'IMOS_OceanCurrent_HV_1993_C-20150521T030649Z.nc.gz'}
+    if (yr==1993) {file = 'IMOS_OceanCurrent_HV_DM01_1993_C-20200615T093812Z.nc.gz'}
+    if (yr==1994) {file = 'IMOS_OceanCurrent_HV_DM01_1994_C-20200615T110033Z.nc.gz'}
+    if (yr==1995) {file = 'IMOS_OceanCurrent_HV_DM01_1995_C-20200615T123704Z.nc.gz'}
+    if (yr==1996) {file = 'IMOS_OceanCurrent_HV_DM01_1996_C-20200615T141744Z.nc.gz'}
+    if (yr==1997) {file = 'IMOS_OceanCurrent_HV_DM01_1997_C-20200615T154026Z.nc.gz'}
+    if (yr==1998) {file = 'IMOS_OceanCurrent_HV_DM01_1998_C-20200615T164237Z.nc.gz'}
+    if (yr==1999) {file = 'IMOS_OceanCurrent_HV_DM01_1999_C-20200615T174520Z.nc.gz'}
+    if (yr==2000) {file = 'IMOS_OceanCurrent_HV_DM01_2000_C-20200615T184648Z.nc.gz'}
+    if (yr==2001) {file = 'IMOS_OceanCurrent_HV_DM01_2001_C-20200615T194911Z.nc.gz'}
+    if (yr==2002) {file = 'IMOS_OceanCurrent_HV_DM01_2002_C-20200615T205247Z.nc.gz'}
+    if (yr==2003) {file = 'IMOS_OceanCurrent_HV_DM01_2003_C-20200615T215257Z.nc.gz'}
+    if (yr==2004) {file = 'IMOS_OceanCurrent_HV_DM01_2004_C-20200615T225422Z.nc.gz'}
+    if (yr==2005) {file = 'IMOS_OceanCurrent_HV_DM01_2005_C-20200615T235235Z.nc.gz'}
+    if (yr==2006) {file = 'IMOS_OceanCurrent_HV_DM01_2006_C-20200616T005101Z.nc.gz'}
+    if (yr==2007) {file = 'IMOS_OceanCurrent_HV_DM01_2007_C-20200616T015143Z.nc.gz'}
+    if (yr==2008) {file = 'IMOS_OceanCurrent_HV_DM01_2008_C-20200616T025018Z.nc.gz'}
+    if (yr==2009) {file = 'IMOS_OceanCurrent_HV_DM01_2009_C-20200616T034913Z.nc.gz'}
+    if (yr==2010) {file = 'IMOS_OceanCurrent_HV_DM01_2010_C-20200616T044857Z.nc.gz'}
+    if (yr==2011) {file = 'IMOS_OceanCurrent_HV_DM01_2011_C-20200616T054753Z.nc.gz'}
+    if (yr==2012) {file = 'IMOS_OceanCurrent_HV_DM01_2012_C-20200616T064615Z.nc.gz'}
+    if (yr==2013) {file = 'IMOS_OceanCurrent_HV_DM01_2013_C-20200616T074441Z.nc.gz'}
+    if (yr==2014) {file = 'IMOS_OceanCurrent_HV_DM01_2014_C-20200616T085821Z.nc.gz'}
+    if (yr==2015) {file = 'IMOS_OceanCurrent_HV_DM01_2015_C-20200616T101243Z.nc.gz'}
+    if (yr==2016) {file = 'IMOS_OceanCurrent_HV_DM01_2016_C-20200616T114334Z.nc.gz'}
+    if (yr==2017) {file = 'IMOS_OceanCurrent_HV_DM01_2017_C-20200616T131008Z.nc.gz'}
+    if (yr==2018) {file = 'IMOS_OceanCurrent_HV_DM01_2018_C-20200616T144027Z.nc.gz'}
+    if (yr==2019) {file = 'IMOS_OceanCurrent_HV_DM01_2019_C-20200616T160523Z.nc.gz'}
+    if (yr==2020) {file = 'IMOS_OceanCurrent_HV_DM01_2020_C-20200616T163221Z.nc.gz'}
     
     alt_url <- paste0(url_base,file)
     nc <- nc_open(alt_url, write=FALSE, readunlim=TRUE, verbose=FALSE)
@@ -87,7 +118,6 @@ fIMOS_MatchAltimetry <- function(dat, ...) {
     idx_lat <- ann(as.matrix(nc$dim$LATITUDE$vals), as.matrix(dat$Latitude[i]), k = 1, verbose = FALSE)$knnIndexDist[,1]
     
     idx_time <- ann(as.matrix(yday(days(nc$dim$TIME$vals) + ymd("1985-01-01"))), as.matrix(yday(dat$Date[i])), k = 1, verbose = FALSE)$knnIndexDist[,1]
-    
     
     cnt <- c(1,1,1)
     if (res_spat > 1) { # If more than 1x1 pixel is requested we adjust the idx by res_spat/2 and count by res_spa
@@ -111,6 +141,9 @@ fIMOS_MatchAltimetry <- function(dat, ...) {
     dat$Latitude_Actual[i] <- nc$dim$LATITUDE$vals[idx_lat]
     
     setTxtProgressBar(pb, i)
+    cat("\n")
+    print(i)
+    nc_close(nc)
   }
   
   return(dat)
