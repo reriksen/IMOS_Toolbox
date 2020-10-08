@@ -124,9 +124,9 @@ ZInfo <- read_csv(paste0(rawD,.Platform$file.sep,"taxon_info.csv"), na = "(null)
   dplyr::rename( "TaxonName" = "TAXON_NAME") %>% 
   untibble()
 
-ACopeSize <- zoodata %>% 
+ACopeSize <- ZooData %>% 
   filter(Copepod == 'COPEPOD') %>%
-  inner_join(Zinfo %>% select(SIZE_AVE_MM, TaxonName, DIET), by = "TaxonName") %>%
+  inner_join(ZInfo %>% select(SIZE_AVE_MM, TaxonName, DIET), by = "TaxonName") %>%
   mutate(abunSize = SIZE_AVE_MM * ZAbund_m3, 
          DIET = ifelse(DIET == 'CC', 'CC', 'CO')) %>%
   group_by(NRScode) %>% 
@@ -135,7 +135,7 @@ ACopeSize <- zoodata %>%
 
 HCrat <- ZooData %>% 
   filter(Copepod == 'COPEPOD') %>%
-  inner_join(Zinfo %>% select(TaxonName, DIET), by = "TaxonName") %>%
+  inner_join(ZInfo %>% select(TaxonName, DIET), by = "TaxonName") %>%
   mutate(DIET = ifelse(DIET == 'CC', 'CC', 'CO')) %>% 
   drop_na() %>%
   select(NRScode, DIET, ZAbund_m3) %>% 
@@ -269,7 +269,7 @@ NDino <-  PhytoData %>%
   summarise(NoDinoSpecies_Sample = n(),
             .groups = "drop")
 
-ShannonDinoDiversity <- phytodata %>% 
+ShannonDinoDiversity <- PhytoData %>% 
   filter(TaxonGroup  == 'Dinoflagellate' & Species != "spp." & !is.na(Species) & !grepl("cf.", Species) & !grepl("grp", Species)) %>% 
   mutate(TaxonName = paste0(Genus," ", word(Species,1))) %>% # bin complexes 
   group_by(NRScode, TaxonName) %>% 
@@ -298,11 +298,11 @@ Indices <-  NRSTrips  %>%
   left_join(DDrat %>% select(-c('Diatom', 'Dinoflagellate')), by = ("NRScode")) %>%
   left_join(AvgCellVol, by = ("NRScode")) %>%
   left_join(PhytoEven, by = ("NRScode")) %>%
-  left_join(DiaEven, by = ("NRScode")) %>%
+  left_join(DiaEven, by = ("NRScode")) %>% 
   left_join(DinoEven, by = ("NRScode")) %>%   
-  left_join(ctd, by = ("NRScode")) %>%
-  left_join(NRSdat %>% select(NRScode, sst_1d, chl_oc3_1d, GSLA, GSL, UCUR, VCUR), by = ("NRScode")) %>%
-  left_join(nuts, by = ("NRScode")) 
+  left_join(CTD, by = ("NRScode")) %>%
+  left_join(NRSdat %>% select(NRScode, sea_surface_temperature_1d, chl_oci_1d, GSLA, GSL, UCUR, VCUR), by = ("NRScode")) %>%
+  left_join(Chemistry, by = ("NRScode")) 
   
 
 
