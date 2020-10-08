@@ -3,20 +3,21 @@
 
 ## Created: Sept 2020
 ## Updated: 
-## 1 Oct 2020 (Written to Git)
-## 6th October 2020
+  ## 1 Oct 2020 (Written to Git)
+  ## 6th October 2020
 
 suppressPackageStartupMessages({
   library(tidyverse)
   library(lubridate)
   library(vegan)
   library(data.table)  
-  # install.packages("devtools")
-  # devtools::install_github("mdsumner/ncdf4")
-  library(ncdf4)
+  library(ncdf4) # devtools::install_github("mdsumner/ncdf4")
 })
 
 source("IMOS_Plankton_functions.R")
+source("../Satellite/fIMOS_MatchAltimetry.R")
+source("../Satellite/fIMOS_MatchMODIS.R")
+source("../Satellite/fIMOS_MatchGHRSST.R")
 
 rawD <- "RawData"
 outD <- "Output"
@@ -26,7 +27,11 @@ outD <- "Output"
 # ensure we have all trips accounted for 
 # note there are circumstances where a trip won't have a phyto and a zoo samples due to loss of sample etc.
 
-NRSTrips <- get_NRSTrips()
+NRSdat <- get_NRSTrips()
+
+dNRSdat <- distinct(NRSdat, NRScode, .keep_all = TRUE) %>%  # Distinct rows for satellite
+  rename(Date = SampleDateLocal) %>% 
+  select(NRScode, Date, Latitude, Longitude)
 
 # SST and Chlorophyll from CTD
 CTD <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_CTD.csv"), na = "(null)",
@@ -47,9 +52,6 @@ CTD <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_CTD.csv"), na = "(null)",
 
 
 # Access satellite data for the sample dates using the IMOS_Toolbox
-source("../Satellite/fIMOS_MatchAltimetry.R")
-source("../Satellite/fIMOS_MatchMODIS.R")
-source("../Satellite/fIMOS_MatchGHRSST.R")
 
 # If on Windows you will need to install a development 
 # version of ncdf4 which allows the use of OpenDAP
@@ -60,9 +62,6 @@ if(.Platform$OS.type == "windows") {
   see 'https://github.com/mdsumner/ncdf4' for more information.")
 }
 
-NRSdat <- NRSTrips %>% 
-  rename(Date = SampleDateLocal)
-
 # Get GHRSST SST Data
 # Possible products to download are: 
 # dt_analysis, l2p_flags, quality_level, satellite_zenith_angle, sea_ice_fraction, sea_ice_fraction_dtime_from_sst, 
@@ -71,7 +70,7 @@ NRSdat <- NRSTrips %>%
 res_temp <- "1d"
 res_spat <- 10 # Return the average of res_spat x res_spat pixels
 pr <- ("sea_surface_temperature")
-NRSdat <- fIMOS_MatchGHRSST(NRSdat, pr, res_temp, res_spat)
+GHRSST <- fIMOS_MatchGHRSST(dNRSdat, pr, res_temp, res_spat)
 
 # Get MODIS Data
 # Possible products
@@ -82,11 +81,13 @@ NRSdat <- fIMOS_MatchGHRSST(NRSdat, pr, res_temp, res_spat)
 pr <- c("chl_oci")
 res_temp <- "1d"
 res_spat <- 10 # Return the average of res_spat x res_spat pixels
-NRSdat <- fIMOS_MatchMODIS(NRSdat, pr, res_temp, res_spat)
+MODIS <- fIMOS_MatchMODIS(dNRSdat, pr, res_temp, res_spat)
 
 
 # Get Altimetry (Gridded sea level anomaly, Gridded sea level, Surface geostrophic velocity)
-NRSdat <- fIMOS_MatchAltimetry(NRSdat, res_spat)
+dNRSdat <- dNRSdat[1:3,]
+Alt <- fIMOS_MatchAltimetry(dNRSdat, res_spat)
+
 
 # Nutrient data
 Nuts <- Chemistry %>% 
@@ -140,7 +141,7 @@ HCrat <- ZooData %>%
   drop_na() %>%
   select(NRScode, DIET, ZAbund_m3) %>% 
   group_by(NRScode, DIET) %>% 
-  summarise(sumdiet = sum(ZAbund_m3 , na.rm = TRUE)) %>% 
+  summarise(sumdiet = sum(ZAbund_m3 , na.rm = TRUE), .groups = "drop") %>% 
   pivot_wider(values_from = sumdiet, names_from = DIET) %>%
   mutate(HerbivoreCarnivoreCopepodRatio = CO / (CO + CC)) %>% 
   untibble()
@@ -160,7 +161,7 @@ n <- ZooCount %>%
   filter(Copepod == 'COPEPOD' & Species != "spp." & !is.na(Species) & !grepl("cf.", Species) & !grepl("grp", Species)) %>% 
   mutate(TaxonName = paste0(Genus," ", word(Species,1))) %>% # bin complexes 
   group_by(NRScode) %>% 
-  summarise(NoCopepodSpecies_Sample = n())
+  summarise(NoCopepodSpecies_Sample = n(), .groups = "drop")
 
 ShannonCopepodDiversity <- ZooCount %>% 
   filter(Copepod == 'COPEPOD' & Species != "spp." & !is.na(Species) & !grepl("cf.", Species) & !grepl("grp", Species)) %>% 
@@ -284,9 +285,15 @@ DinoEven <- NDino %>%
   cbind(ShannonDinoDiversity) %>% 
   mutate(DinoflagellateEvenness = ShannonDinoDiversity / log(NoDinoSpecies_Sample))
 
+GHRSST <- dNRSdat %>% 
+  add_column(sea_surface_temperature_1d = NA)
+MODIS <- dNRSdat %>% 
+  add_column(chl_oci_1d = NA)
+Alt <- dNRSdat %>% 
+  add_column(GSLA = NA, GSL = NA, UCUR = NA, VCUR = NA)
 
 # make indices table (nrows must always equal nrows of Trips)
-Indices <-  NRSTrips  %>%
+Indices <-  NRSdat  %>%
   left_join(TZoo, by = ("NRScode")) %>%
   left_join(TCope, by = ("NRScode")) %>%
   left_join(ZBiomass %>% select(-SampleDepth_m), by = ("NRScode")) %>%
@@ -301,10 +308,13 @@ Indices <-  NRSTrips  %>%
   left_join(DiaEven, by = ("NRScode")) %>% 
   left_join(DinoEven, by = ("NRScode")) %>%   
   left_join(CTD, by = ("NRScode")) %>%
-  left_join(NRSdat %>% select(NRScode, sea_surface_temperature_1d, chl_oci_1d, GSLA, GSL, UCUR, VCUR), by = ("NRScode")) %>%
-  left_join(Chemistry, by = ("NRScode")) 
-  
+  left_join(Nuts, by = ("NRScode")) %>% 
+  left_join(GHRSST %>% select(-c("Longitude", "Latitude", "Date")), by = ("NRScode")) %>% 
+  left_join(MODIS %>% select(-c("Longitude", "Latitude", "Date")), by = ("NRScode")) %>% 
+  left_join(Alt %>% select(c("NRScode", "GSLA", "GSL", "UCUR", "VCUR")), by = ("NRScode"))
 
+
+fwrite(Indices, file = paste0(outD,.Platform$file.sep,"NRS_Indices.csv"), row.names = FALSE)
 
 # test table
 # n should be 1, replicates or duplicate samples will have values > 1
