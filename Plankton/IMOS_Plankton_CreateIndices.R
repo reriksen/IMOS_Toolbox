@@ -15,9 +15,9 @@ suppressPackageStartupMessages({
 })
 
 source("IMOS_Plankton_functions.R")
-source("../Satellite/fIMOS_MatchAltimetry.R")
-source("../Satellite/fIMOS_MatchMODIS.R")
-source("../Satellite/fIMOS_MatchGHRSST.R")
+# source("../Satellite/fIMOS_MatchAltimetry.R")
+# source("../Satellite/fIMOS_MatchMODIS.R")
+# source("../Satellite/fIMOS_MatchGHRSST.R")
 
 rawD <- "RawData"
 outD <- "Output"
@@ -44,54 +44,54 @@ CTD <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_CTD.csv"), na = "(null)",
          CTDTurbidity_ntu = TURB, CTDChlF_mgm3 = CHLF) %>%
   mutate(SampleDepth_m = as.character(SampleDepth_m, 0)) %>% 
   filter(SampleDepth_m <11) %>% 
-  group_by(NRScode) %>% 
+  group_by(NRScode, SampleDepth_m) %>% 
   summarise(CTD_SST_C = mean(CTDTemperature, na.rm = TRUE),
             CTDChlF_mgm3 = mean(CTDChlF_mgm3, na.rm = TRUE),
             .groups = "drop") %>%
   untibble()
 
 
-# Access satellite data for the sample dates using the IMOS_Toolbox
-
-# If on Windows you will need to install a development 
-# version of ncdf4 which allows the use of OpenDAP
-if(.Platform$OS.type == "windows") {
-  warning("It looks like you are on a Windows PC - You will need to install a 
-  development version of ncdf4 which allows the use of OpenDAP. Please 
-  run devtools::install_github('mdsumner/ncdf4') to install or 
-  see 'https://github.com/mdsumner/ncdf4' for more information.")
-}
-
-# Get GHRSST SST Data
-# Possible products to download are: 
-# dt_analysis, l2p_flags, quality_level, satellite_zenith_angle, sea_ice_fraction, sea_ice_fraction_dtime_from_sst, 
-# sea_surface_temperature, sea_surface_temperature_day_night, sses_bias, sses_count,sses_standard_deviation,
-# sst_count, sst_dtime, sst_mean, sst_standard_deviation, wind_speed, wind_speed_dtime_from_sst,
-res_temp <- "1d"
-res_spat <- 10 # Return the average of res_spat x res_spat pixels
-pr <- ("sea_surface_temperature")
-GHRSST <- fIMOS_MatchGHRSST(dNRSdat, pr, res_temp, res_spat)
-
-# Get MODIS Data
-# Possible products
-# pr <- c("sst_quality", "sst", "picop_brewin2012in", "picop_brewin2010at", "par", 
-#         "owtd", "npp_vgpm_eppley_oc3", "npp_vgpm_eppley_gsm", "nanop_brewin2012in",
-#         "nanop_brewin2010at", "l2_flags", "ipar", "dt", "chl_oc3", "chl_gsm", "K_490")
-
-pr <- c("chl_oci")
-res_temp <- "1d"
-res_spat <- 10 # Return the average of res_spat x res_spat pixels
-MODIS <- fIMOS_MatchMODIS(dNRSdat, pr, res_temp, res_spat)
-
-
-# Get Altimetry (Gridded sea level anomaly, Gridded sea level, Surface geostrophic velocity)
-dNRSdat <- dNRSdat[1:3,]
-Alt <- fIMOS_MatchAltimetry(dNRSdat, res_spat)
+# # Access satellite data for the sample dates using the IMOS_Toolbox
+# 
+# # If on Windows you will need to install a development 
+# # version of ncdf4 which allows the use of OpenDAP
+# if(.Platform$OS.type == "windows") {
+#   warning("It looks like you are on a Windows PC - You will need to install a 
+#   development version of ncdf4 which allows the use of OpenDAP. Please 
+#   run devtools::install_github('mdsumner/ncdf4') to install or 
+#   see 'https://github.com/mdsumner/ncdf4' for more information.")
+# }
+# 
+# # Get GHRSST SST Data
+# # Possible products to download are: 
+# # dt_analysis, l2p_flags, quality_level, satellite_zenith_angle, sea_ice_fraction, sea_ice_fraction_dtime_from_sst, 
+# # sea_surface_temperature, sea_surface_temperature_day_night, sses_bias, sses_count,sses_standard_deviation,
+# # sst_count, sst_dtime, sst_mean, sst_standard_deviation, wind_speed, wind_speed_dtime_from_sst,
+# res_temp <- "1d"
+# res_spat <- 10 # Return the average of res_spat x res_spat pixels
+# pr <- ("sea_surface_temperature")
+# GHRSST <- fIMOS_MatchGHRSST(dNRSdat, pr, res_temp, res_spat)
+# 
+# # Get MODIS Data
+# # Possible products
+# # pr <- c("sst_quality", "sst", "picop_brewin2012in", "picop_brewin2010at", "par", 
+# #         "owtd", "npp_vgpm_eppley_oc3", "npp_vgpm_eppley_gsm", "nanop_brewin2012in",
+# #         "nanop_brewin2010at", "l2_flags", "ipar", "dt", "chl_oc3", "chl_gsm", "K_490")
+# 
+# pr <- c("chl_oci")
+# res_temp <- "1d"
+# res_spat <- 10 # Return the average of res_spat x res_spat pixels
+# MODIS <- fIMOS_MatchMODIS(dNRSdat, pr, res_temp, res_spat)
+# 
+# 
+# # Get Altimetry (Gridded sea level anomaly, Gridded sea level, Surface geostrophic velocity)
+# dNRSdat <- dNRSdat[1:3,]
+# Alt <- fIMOS_MatchAltimetry(dNRSdat, res_spat)
 
 
 # Nutrient data
 Nuts <- Chemistry %>% 
-  group_by(NRScode) %>% 
+  group_by(NRScode, SampleDepth_m) %>% 
   summarise(Silicate_umol_L = mean(Silicate_umol_L, na.rm = TRUE),
             Phosphate_umol_L = mean(Phosphate_umol_L, na.rm = TRUE),
             Ammonium_umol_L = mean(Ammonium_umol_L, na.rm = TRUE),
@@ -116,7 +116,7 @@ TZoo <- ZooData %>%
 
 TCope <- ZooData %>% 
   filter(Copepod == 'COPEPOD') %>% 
-  group_by(NRScode) %>% 
+  group_by(NRScode, ) %>% 
   summarise(CopeAbundance_m3 = sum(ZAbund_m3, na.rm = TRUE),
             .groups = "drop")
 
@@ -285,34 +285,27 @@ DinoEven <- NDino %>%
   cbind(ShannonDinoDiversity) %>% 
   mutate(DinoflagellateEvenness = ShannonDinoDiversity / log(NoDinoSpecies_Sample))
 
-GHRSST <- dNRSdat %>% 
-  add_column(sea_surface_temperature_1d = NA)
-MODIS <- dNRSdat %>% 
-  add_column(chl_oci_1d = NA)
-Alt <- dNRSdat %>% 
-  add_column(GSLA = NA, GSL = NA, UCUR = NA, VCUR = NA)
-
 # make indices table (nrows must always equal nrows of Trips)
 Indices <-  NRSdat  %>%
-  left_join(TZoo, by = ("NRScode")) %>%
-  left_join(TCope, by = ("NRScode")) %>%
-  left_join(ZBiomass %>% select(-SampleDepth_m), by = ("NRScode")) %>%
-  left_join(ACopeSize, by = ("NRScode")) %>%
-  left_join(HCrat %>% select(-c('CO', 'CC')), by = ("NRScode")) %>% 
-  left_join(CopepodEvenness,  by = ("NRScode")) %>%
-  left_join(PhytoC, by = ("NRScode")) %>%
-  left_join(TPhyto, by = ("NRScode")) %>%
-  left_join(DDrat %>% select(-c('Diatom', 'Dinoflagellate')), by = ("NRScode")) %>%
-  left_join(AvgCellVol, by = ("NRScode")) %>%
-  left_join(PhytoEven, by = ("NRScode")) %>%
-  left_join(DiaEven, by = ("NRScode")) %>% 
-  left_join(DinoEven, by = ("NRScode")) %>%   
-  left_join(CTD, by = ("NRScode")) %>%
-  left_join(Nuts, by = ("NRScode")) %>% 
-  left_join(GHRSST %>% select(-c("Longitude", "Latitude", "Date")), by = ("NRScode")) %>% 
-  left_join(MODIS %>% select(-c("Longitude", "Latitude", "Date")), by = ("NRScode")) %>% 
-  left_join(Alt %>% select(c("NRScode", "GSLA", "GSL", "UCUR", "VCUR")), by = ("NRScode"))
-
+  left_join(TZoo, by = c("NRScode", "SampleDepth_m")) %>%
+  left_join(TCope, by = c("NRScode", "SampleDepth_m")) %>%
+  left_join(ZBiomass %>% by = c("NRScode", "SampleDepth_m")) %>%
+  left_join(ACopeSize, by = c("NRScode", "SampleDepth_m")) %>%
+  left_join(HCrat %>% select(-c('CO', 'CC')), c("NRScode", "SampleDepth_m")) %>% 
+  left_join(CopepodEvenness,  by = c("NRScode", "SampleDepth_m")) %>%
+  left_join(PhytoC, by = c("NRScode", "SampleDepth_m")) %>%
+  left_join(TPhyto, by = c("NRScode", "SampleDepth_m")) %>%
+  left_join(DDrat %>% select(-c('Diatom', 'Dinoflagellate')), by = c("NRScode", "SampleDepth_m")) %>%
+  left_join(AvgCellVol, by = c("NRScode", "SampleDepth_m")) %>%
+  left_join(PhytoEven, by = c("NRScode", "SampleDepth_m")) %>%
+  left_join(DiaEven, by = c("NRScode", "SampleDepth_m")) %>% 
+  left_join(DinoEven, by = c("NRScode", "SampleDepth_m")) %>%   
+  left_join(CTD, by = c("NRScode", "SampleDepth_m")) %>%
+  left_join(Nuts, by = c("NRScode", "SampleDepth_m")) 
+# %>% 
+#   left_join(GHRSST %>% select(-c("Longitude", "Latitude", "Date")), by = ("NRScode")) %>% 
+#   left_join(MODIS %>% select(-c("Longitude", "Latitude", "Date")), by = ("NRScode")) %>% 
+#   left_join(Alt %>% select(c("NRScode", "GSLA", "GSL", "UCUR", "VCUR")), by = ("NRScode"))
 
 fwrite(Indices, file = paste0(outD,.Platform$file.sep,"NRS_Indices.csv"), row.names = FALSE)
 
