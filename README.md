@@ -1,9 +1,10 @@
 # IMOS_Toolbox
-A repo for useful IMOS code relating to plankton and satellite data
+A repo for useful code related to downloading, analysing and plotting IMOS data
 
-**NOTE:** If you are on a Windows PC - You will need to install a development version of ncdf4 which allows the use of OpenDAP. Please run ```devtools::install_github('mdsumner/ncdf4')``` to install or see https://github.com/mdsumner/ncdf4 for more information.
 
 ### Satellite Data
+
+**NOTE:** If you are on a Windows PC - You will need to install a development version of ncdf4 which allows the use of OpenDAP. Please run ```devtools::install_github('mdsumner/ncdf4')``` to install or see https://github.com/mdsumner/ncdf4 for more information.
 
 fIMOS_MatchMODIS.R is a function which does all the heavy lifting. It will download any MODIS data from the IMOS DAP Server
 
