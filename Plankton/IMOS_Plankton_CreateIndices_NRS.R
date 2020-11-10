@@ -120,9 +120,7 @@ TCope <- ZooData %>%
             .groups = "drop")
 
 # Bring in copepod information table with sizes etc.
-ZInfo <- read_csv(paste0(rawD,.Platform$file.sep,"taxon_info.csv"), na = "(null)") %>% 
-  dplyr::rename( "TaxonName" = "TAXON_NAME") %>% 
-  untibble()
+ZInfo <- get_ZooInfo() 
 
 ACopeSize <- ZooData %>% 
   filter(Copepod == 'COPEPOD') %>%
