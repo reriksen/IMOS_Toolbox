@@ -33,42 +33,17 @@ cprTrips <- read_csv(paste0(rawD,.Platform$file.sep,"PSampCPR.csv"), na = "(null
   select(c(Sample, Latitude:Time_24hr, Region, Route))
 
 
-mbr <-  readOGR("../General/Shapefiles/marine_regions_2012/",
-                proj4string=CRS("+proj=longlat +datum=WGS84"))
-
+mbr <-  readOGR("../General/Shapefiles/marine_regions_2012/")
+mbr <- spTransform(mbr, CRS("+proj=longlat +datum=WGS84"))
 ## Read the segments.
 
-segments <- read.csv("segments.csv") # file with columns named Longitude, Latitude
-
-## Convert the segments table to a SpatialPolygonsDataFrame.
-
-coordinates(segments) <- c("Longitude", "Latitude")
+segments <- cprTrips %>% 
+  select(Longitude, Latitude) # file with columns named Longitude, Latitude
+coordinates(segments) <- c("Longitude", "Latitude") ## Convert the segments table to a SpatialPolygonsDataFrame.
 proj4string(segments) <- CRS("+proj=longlat +datum=WGS84")
+segmbr <- over(segments, mbr) ## Perform the point in polygon overlay.
 
-## Perform the point in polygon overlay.
-
-segmbr <- over(segments, mbr)
-
-## Join the segment points to the IMCRA attributes (just by row order because
-## the row orders of segments and segImcra are guaranteed to match).
-
-segmbr <- spCbind(segments, segmbr)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+cprTrips$BioRegion <- segmbr$REGION
 
 cprProps <- read_csv(paste0(rawD,.Platform$file.sep,"AllSampCPR.csv"), na = "(null)") %>% 
   rename(Sample = SAMPLE, ChlorophyllMonthlyClimatology_mg_m3 = CHL_AVG, ChlorophyllSatellite_mg_m3 = CHL, WaterDepth_m = WATERDEPTH_M)
