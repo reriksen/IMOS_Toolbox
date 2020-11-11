@@ -7,7 +7,8 @@
 suppressPackageStartupMessages({
   library(lubridate)
   library(vegan)
-  library(data.table)  
+  library(data.table)
+  library(rgdal)
   library(tidyverse)
 })
 
@@ -31,6 +32,44 @@ cprTrips <- read_csv(paste0(rawD,.Platform$file.sep,"PSampCPR.csv"), na = "(null
          SampleDateUTC = as.character(SampleDateUTC)) %>% 
   select(c(Sample, Latitude:Time_24hr, Region, Route))
 
+
+mbr <-  readOGR("../General/Shapefiles/marine_regions_2012/",
+                proj4string=CRS("+proj=longlat +datum=WGS84"))
+
+## Read the segments.
+
+segments <- read.csv("segments.csv") # file with columns named Longitude, Latitude
+
+## Convert the segments table to a SpatialPolygonsDataFrame.
+
+coordinates(segments) <- c("Longitude", "Latitude")
+proj4string(segments) <- CRS("+proj=longlat +datum=WGS84")
+
+## Perform the point in polygon overlay.
+
+segmbr <- over(segments, mbr)
+
+## Join the segment points to the IMCRA attributes (just by row order because
+## the row orders of segments and segImcra are guaranteed to match).
+
+segmbr <- spCbind(segments, segmbr)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 cprProps <- read_csv(paste0(rawD,.Platform$file.sep,"AllSampCPR.csv"), na = "(null)") %>% 
   rename(Sample = SAMPLE, ChlorophyllMonthlyClimatology_mg_m3 = CHL_AVG, ChlorophyllSatellite_mg_m3 = CHL, WaterDepth_m = WATERDEPTH_M)
 
@@ -39,7 +78,6 @@ satcpr <- cprTrips %>%
 
 if (get_sat_data == TRUE){
   # accessing the satelitte data from MODIS
-  
   
   # Possible products
   # pr <- c("sst_quality", "sst", "picop_brewin2012in", "picop_brewin2010at", "par", 
