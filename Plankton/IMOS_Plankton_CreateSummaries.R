@@ -195,8 +195,8 @@ cprSpecP1 <- cprSpecP1 %>%
   summarise(PAbun_m3 = max(PAbun_m3), .groups = "drop") %>% 
   arrange(-desc(TaxonName)) %>% 
   as.data.frame() 
-# select maximum value of duplicates, but leave -999 for all other occurences as not regularly identified
 
+# select maximum value of duplicates, but leave -999 for all other occurences as not regularly identified
 cprSpecP <-  cprSpecP1 %>% 
   pivot_wider(names_from = TaxonName, values_from = PAbun_m3, values_fill = list(PAbun_m3 = 0)) %>% 
   arrange(desc(SampleDateUTC)) 
@@ -222,7 +222,6 @@ cprZcl <- read_csv(paste0(rawD,.Platform$file.sep,"ChangeLogCPRZ.csv"), na = "(n
   rename(TaxonName = TAXON_NAME, StartDate = START_DATE, ParentName = PARENT_NAME)
 
 #### CPR ZOOP RAW ####
-
 cprRawZ1 <- left_join(cprZsamp, cprZdat, by = "Sample") %>% 
   select(-c("Copepod", "TaxonGroup", "Genus", "Species")) %>% 
   arrange(-desc(TaxonName)) %>%
@@ -463,6 +462,10 @@ cprnCop <-  cprnCop1 %>%
 
 fwrite(cprnCop, file = paste0(outD,.Platform$file.sep,"CPR_zoop_noncopes_mat.csv"), row.names = FALSE)
 
+
+
+
+
 #### NRS Phytoplankton #### #################################################################################################################################
 
 # Bring in all NRS phytoplankton samples
@@ -485,7 +488,8 @@ NRSPcl <- read_csv(paste0(rawD,.Platform$file.sep,"ChangeLogNRSP.csv"), na = "(n
 #### NRS PHYTO RAW ####
 
 NRSRawP1 <- left_join(NRSPsamp, NRSPdat, by = "Sample") %>% 
-  select(c(1:11,15)) %>% 
+  # select(c(1:11,15)) %>% 
+  select(-c(TaxonGroup, Genus, Species, Biovolume_uM3_L)) %>% 
   arrange(-desc(TaxonName)) 
 
 NRSRawP <- NRSRawP1 %>% 
