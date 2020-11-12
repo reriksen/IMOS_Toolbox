@@ -107,9 +107,9 @@ Nuts <- Chemistry %>%
 Pigments <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_pigments.csv"), na = "(null)") %>% 
   select(NRS_TRIP_CODE, SAMPLE_DEPTH_M, DV_CPHL_A_AND_CPHL_A) %>% 
   rename(NRScode = NRS_TRIP_CODE, SampleDepth_m = SAMPLE_DEPTH_M, Chla = DV_CPHL_A_AND_CPHL_A) %>%
-  # filter(SampleDepth_m < 10) %>% # take average of top 10m as a surface value for SST and CHL
+  filter(SampleDepth_m <= 20) %>% # take average of top 10m as a surface value for SST and CHL
+  # filter(SampleDepth_m == "WC") %>% 
   mutate(NRScode = str_replace(NRScode, "NRS", "")) %>% 
-  filter(SampleDepth_m == "WC") %>% 
   group_by(NRScode) %>% 
   summarise(Chla_mgm3 = mean(Chla, na.rm = TRUE),
             .groups = "drop") %>%
