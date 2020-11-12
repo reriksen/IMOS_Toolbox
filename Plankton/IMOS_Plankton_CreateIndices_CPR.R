@@ -9,6 +9,7 @@ suppressPackageStartupMessages({
   library(vegan)
   library(data.table)
   library(rgdal)
+  library(rlang)
   library(tidyverse)
 })
 
@@ -42,8 +43,36 @@ segments <- cprTrips %>%
 coordinates(segments) <- c("Longitude", "Latitude") ## Convert the segments table to a SpatialPolygonsDataFrame.
 proj4string(segments) <- CRS("+proj=longlat +datum=WGS84")
 segmbr <- over(segments, mbr) ## Perform the point in polygon overlay.
-
 cprTrips$BioRegion <- segmbr$REGION
+
+
+## Temporary fix for state-based waters near bioregions
+# ggplot(data = cprTrips, aes(x = Longitude, y = Latitude, colour = BioRegion)) + geom_point()
+
+cprTrips <- cprTrips %>% 
+  mutate(BioRegion = case_when(Longitude >= mbr[17,]@bbox[1,1] &
+                                 Longitude <= mbr[17,]@bbox[1,2] &
+                                 Latitude >= mbr[17,]@bbox[2,1] &
+                                 Latitude <= mbr[17,]@bbox[2,2] &
+                                 are_na(BioRegion) == TRUE ~ "Coral Sea",
+                               Longitude >= mbr[2,]@bbox[1,1] &
+                                 Longitude <= mbr[2,]@bbox[1,2] &
+                                 Latitude >= mbr[2,]@bbox[2,1] &
+                                 Latitude <= mbr[2,]@bbox[2,2] &
+                                 are_na(BioRegion) == TRUE ~ "Temperate East",
+                               Longitude >= mbr[7,]@bbox[1,1] &
+                                 Longitude <= mbr[7,]@bbox[1,2] &
+                                 Latitude >= mbr[7,]@bbox[2,1] &
+                                 Latitude <= mbr[7,]@bbox[2,2] &
+                                 are_na(BioRegion) == TRUE ~ "South-west",
+                               Longitude >= mbr[13,]@bbox[1,1] &
+                                 Longitude <= mbr[13,]@bbox[1,2] &
+                                 Latitude >= mbr[13,]@bbox[2,1] &
+                                 Latitude <= mbr[13,]@bbox[2,2] &
+                                 are_na(BioRegion) == TRUE ~ "South-east",
+                               TRUE ~ BioRegion))
+
+# ggplot(data = cprTrips, aes(x = Longitude, y = Latitude, colour = BioRegion)) + geom_point()
 
 cprProps <- read_csv(paste0(rawD,.Platform$file.sep,"AllSampCPR.csv"), na = "(null)") %>% 
   rename(Sample = SAMPLE, ChlorophyllMonthlyClimatology_mg_m3 = CHL_AVG, ChlorophyllSatellite_mg_m3 = CHL, WaterDepth_m = WATERDEPTH_M)
