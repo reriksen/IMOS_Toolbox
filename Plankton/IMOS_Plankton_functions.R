@@ -17,3 +17,11 @@ get_NRSTrips <- function(){
     distinct()
   return(NRSTrips)
 }
+
+
+# Bring in copepod information table with sizes etc.
+get_ZooInfo <- function(){
+  ZInfo <- read_csv(paste0(rawD,.Platform$file.sep,"taxon_info.csv"), na = "(null)") %>% 
+    dplyr::rename( "TaxonName" = "TAXON_NAME") %>% 
+    untibble()
+}
