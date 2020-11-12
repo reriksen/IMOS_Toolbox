@@ -128,8 +128,14 @@ CTD <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_CTD.csv"), na = "(null)",
          CTDTemperature = TEMP, CTDPAR_umolm2s = PAR,
          CTDConductivity_sm = CNDC, CTDSpecificConductivity_Sm = SPEC_CNDC, 
          CTDSalinity = PSAL, CTDTurbidity_ntu = TURB, CTDChlF_mgm3 = CHLF) %>%
-  mutate(SampleDepth_m = as.character(SampleDepth_m, 0)) %>% 
+    mutate(SampleDepth_m = as.character(round(SampleDepth_m, 0))) %>% 
   untibble()
+
+notrips <-  read_csv(paste0(rawD,.Platform$file.sep,"nrs_CTD.csv"), na = "(null)",
+                     col_types = cols(PRES = col_double(), # columns start with nulls so tidyverse annoyingly assigns col_logical()
+                                      PAR = col_double(),
+                                      SPEC_CNDC = col_double())) %>% select(NRS_TRIP_CODE) %>% distinct()
+
 
 # Combined BGC data for each station at the sample depth
 BGC <- NRSTrips %>% 
