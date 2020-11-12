@@ -8,7 +8,7 @@ library(maptools)
 ## Read the IMCRA mesoscale shapefile.
 
 imcra <-
-    readShapePoly("shape/imcra4_meso",
+    readShapePoly("shape/imcra_4/imcra4_meso",
                   proj4string=CRS("+proj=longlat +datum=WGS84"))
 
 imcra_det <- imcra@data[,1:3]
@@ -48,7 +48,7 @@ outTable <- segImcra@data[c("SILK_ID", "SEGMENT_NO" , "MESO_ABBR")]
 ## Read the IMCRA bioregions shapefile.
 
 imcrapb <-
-  readShapePoly("shape/imcra4_pb",
+  readShapePoly("shape/imcra_4/imcra4_pb",
                 proj4string=CRS("+proj=longlat +datum=WGS84"))
 
 ## Read the segments.
@@ -86,7 +86,7 @@ outTable <- segImcrapb@data[c("SILK_ID","SEGMENT_NO",  "PB_NAME")]
 ## Read the Marine planning bioregions shapefile.
 
 mbr <-
-  readShapePoly("shape/marine_regions",
+  readShapePoly("shape/marine_regions_2012/marine_regions",
                 proj4string=CRS("+proj=longlat +datum=WGS84"))
 
 ## Read the segments.
