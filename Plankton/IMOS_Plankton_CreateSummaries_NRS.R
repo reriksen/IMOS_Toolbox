@@ -1,0 +1,471 @@
+## Claire Davies (CSIRO) and Jason D Everett (UQ/CSIRO)
+## IMOS plankton data products
+
+## Created: May 2020
+## Updated: 
+## 21 July 2020 (Written to Git)
+## 22 September 2020 (Updated data file structure)
+## 13th November 2020 (Split CPR and NRS)
+
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(lubridate)
+  library(data.table)
+})
+
+rawD <- "RawData"
+outD <- "Output"
+
+#### NRS Phytoplankton #### #################################################################################################################################
+
+# Bring in all NRS phytoplankton samples
+NRSPsamp <- read_csv(paste0(rawD,.Platform$file.sep,"PSampNRS.csv"), na = "(null)") %>% 
+  rename(Sample = SAMPLE, Station = STATION, Latitude = LATITUDE, Longitude = LONGITUDE, SampleDateLocal = SAMPLEDATE, NRScode = NRS_CODE) %>%
+  mutate(Year = year(SampleDateLocal),
+         Month = month(SampleDateLocal),
+         Day = day(SampleDateLocal),
+         Time_24hr = str_sub(SampleDateLocal, -8, -1)) # hms doesn"t seem to work on 00:00:00 times
+
+# Bring in plankton data
+NRSPdat <- read_csv(paste0(rawD,.Platform$file.sep,"NRS_phyto_raw.csv"), na = "(null)") %>%
+  rename(Sample = SAMPLE, TaxonName = TAXON_NAME, TaxonGroup = TAXON_GROUP, Genus = GENUS, Species = SPECIES, 
+         Cells_L = CELL_PER_LITRE, Biovolume_uM3_L = BIOVOLUME_UM3_PER_L)
+
+# Bring in Change Log
+NRSPcl <- read_csv(paste0(rawD,.Platform$file.sep,"ChangeLogNRSP.csv"), na = "(null)") %>%
+  rename(TaxonName = TAXON_NAME, StartDate = START_DATE, ParentName = PARENT_NAME)
+
+#### Raw Phytoplankton ####
+
+NRSRawP1 <- left_join(NRSPsamp, NRSPdat, by = "Sample") %>% 
+  select(-c(TaxonGroup, Genus, Species, Biovolume_uM3_L)) %>% 
+  arrange(-desc(TaxonName)) 
+
+NRSRawP <- NRSRawP1 %>% 
+  pivot_wider(names_from = TaxonName, values_from = Cells_L, values_fill = list(Cells_L = 0)) %>% 
+  arrange(desc(SampleDateLocal)) %>% 
+  select(-Sample) %>% 
+  mutate(SampleDateLocal = as.character(SampleDateLocal))
+
+fwrite(NRSRawP, file = paste0(outD,.Platform$file.sep,"NRS_phyto_raw_mat.csv"), row.names = FALSE)
+
+#### Higher Trophic Groups ####
+
+NRSHTGP1 <- NRSPdat %>% 
+  group_by(Sample, TaxonGroup) %>% 
+  summarise(Cells_L = sum(Cells_L, na.rm = TRUE), .groups = "drop") %>%
+  filter(!TaxonGroup %in% c("Other","Coccolithophore", "Diatom","Protozoa")) 
+
+NRSHTGP1 <- NRSPsamp %>% 
+  left_join(NRSHTGP1, by = "Sample") %>% 
+  mutate(TaxonGroup = ifelse(is.na(TaxonGroup), "Ciliate", TaxonGroup),
+         Cells_L = ifelse(is.na(Cells_L), 0, Cells_L)) %>% 
+  arrange(-desc(TaxonGroup))
+
+NRSHTGP <-  NRSHTGP1 %>% 
+  pivot_wider(names_from = TaxonGroup, values_from = Cells_L, values_fill = list(Cells_L = 0)) %>% 
+  arrange(desc(SampleDateLocal)) %>% 
+  select(-Sample)
+
+fwrite(NRSHTGP, file = paste0(outD,.Platform$file.sep,"NRS_phyto_HTG_mat.csv"), row.names = FALSE)
+
+#### Genus ####
+
+# Check genus are effected by change log
+nrslg <- NRSPcl %>% 
+  mutate(genus1 = word(TaxonName, 1),
+         genus2 = word(ParentName, 1)) %>%
+  mutate(same = ifelse(genus1==genus2, "yes", "no")) %>%
+  filter(same == "no")# no changes at genera level
+
+# for non change log species
+NRSGenP1 <- NRSPdat %>% 
+  filter(!TaxonName %in% levels(as.factor(nrslg$TaxonName))) %>% 
+  group_by(Sample, Genus) %>% 
+  summarise(Cells_L = sum(Cells_L, na.rm = TRUE), .groups = "drop") %>% 
+  drop_na(Genus) 
+
+NRSGenP1 <- NRSPsamp %>% 
+  left_join(NRSGenP1, by = "Sample") %>% 
+  mutate(StartDate = ymd("2007-12-19"),
+         Genus = ifelse(is.na(Genus), "Acanthoica", Genus),
+         Cells_L = ifelse(is.na(Cells_L), 0, Cells_L)) %>% 
+  group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
+  summarise(Cells_L = sum(Cells_L), .groups = "drop") %>% 
+  as.data.frame()
+
+# add change log species with -999 for NA"s and real absences as 0"s
+NRSGenP2 <- NRSPdat %>% 
+  filter(TaxonName %in% levels(as.factor(nrslg$TaxonName))) %>% 
+  left_join(NRSPcl, by = "TaxonName") %>%
+  mutate(Genus = as_factor(Genus)) %>% 
+  drop_na(Genus) %>%
+  group_by(Sample, StartDate, Genus) %>% 
+  summarise(Cells_L = sum(Cells_L, na.rm = TRUE), .groups = "drop") 
+
+for (i in 1:nlevels(NRSGenP2$Genus)) {
+  Dates <- as.data.frame(NRSGenP2) %>% 
+    filter(Genus == Genus[i]) %>% 
+    slice(1) %>% 
+    droplevels()
+  
+  gen <- as.data.frame(NRSGenP2) %>% 
+    filter(Genus == Genus[i]) %>% 
+    droplevels() 
+  
+  gen <- NRSPsamp %>% 
+    left_join(gen, by = "Sample") %>%
+    mutate(StartDate = replace(StartDate, is.na(StartDate), Dates$StartDate),
+           Genus = replace(Genus, is.na(Genus), Dates$Genus),
+           Cells_L = replace(Cells_L, StartDate>SampleDateLocal, -999), 
+           Cells_L = replace(Cells_L, StartDate<SampleDateLocal & is.na(Cells_L), 0)) %>% 
+    group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
+    summarise(Cells_L = sum(Cells_L), .groups = "drop") %>% 
+    as.data.frame()     
+  NRSGenP1 <- rbind(NRSGenP1, gen)
+}
+
+NRSGenP1 <- NRSGenP1 %>% 
+  group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
+  summarise(Cells_L = max(Cells_L), .groups = "drop") %>% 
+  arrange(-desc(Genus)) %>% 
+  as.data.frame()
+
+# select maximum value of duplicates, but leave -999 for all other occurrences as not regularly identified
+NRSGenP <-  NRSGenP1 %>% 
+  pivot_wider(names_from = Genus, values_from = Cells_L, values_fill = list(Cells_L = 0)) %>% 
+  arrange(desc(SampleDateLocal))  %>% 
+  mutate(SampleDateLocal = as.character(SampleDateLocal))
+
+fwrite(NRSGenP, file = paste0(outD,.Platform$file.sep,"NRS_phyto_genus_mat.csv"), row.names = FALSE)
+
+#### Species ####
+
+# Check at what level we need change log
+nrsls <- NRSPcl %>% 
+  mutate(same = ifelse(TaxonName == ParentName, "yes", "no")) %>%
+  filter(same == "no") # no changes at genera level
+
+# for non change log species
+
+NRSSpecP1 <- NRSPdat %>% 
+  filter(!TaxonName %in% levels(as.factor(nrsls$TaxonName))
+         & Species != "spp." & !is.na(Species) & !grepl("cf.", Species)) %>% 
+  group_by(Sample, TaxonName) %>% 
+  summarise(Cells_L = sum(Cells_L, na.rm = TRUE), .groups = "drop")
+
+NRSSpecP1 <- NRSPsamp %>% 
+  left_join(NRSSpecP1, by = "Sample") %>% 
+  mutate(StartDate = ymd("2007-12-19"),
+         TaxonName = ifelse(is.na(TaxonName), "Paralia sulcata", TaxonName),
+         Cells_L = ifelse(is.na(Cells_L), 0, Cells_L)) %>% 
+  group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, TaxonName) %>%
+  summarise(Cells_L = sum(Cells_L), .groups = "drop") %>% 
+  as.data.frame()
+
+# add change log species with -999 for NA"s and real absences as 0"s
+NRSSpecP2 <- NRSPdat %>% 
+  filter(TaxonName %in% levels(as.factor(nrsls$TaxonName))
+         & Species != "spp." & !is.na(Species) & !grepl("cf.", Species)) %>% 
+  left_join(NRSPcl, by = "TaxonName") %>%
+  mutate(TaxonName = as_factor(TaxonName)) %>% 
+  drop_na(TaxonName) %>%
+  group_by(Sample, StartDate, TaxonName) %>% 
+  summarise(Cells_L = sum(Cells_L, na.rm = TRUE), .groups = "drop") 
+
+for (i in 1:nlevels(NRSSpecP2$TaxonName)) {
+  Dates <- as.data.frame(NRSSpecP2) %>% 
+    filter(TaxonName == TaxonName[i]) %>% 
+    slice(1)  %>% 
+    droplevels()
+  
+  spec <- as.data.frame(NRSSpecP2) %>% 
+    filter(TaxonName == TaxonName[i]) %>% 
+    droplevels() 
+  
+  spec <- NRSPsamp %>% 
+    left_join(spec, by = "Sample") %>%
+    mutate(StartDate = replace(StartDate, is.na(StartDate), Dates$StartDate),
+           TaxonName = replace(TaxonName, is.na(TaxonName), Dates$TaxonName),
+           Cells_L = replace(Cells_L, StartDate>SampleDateLocal, -999), 
+           Cells_L = replace(Cells_L, StartDate<SampleDateLocal & is.na(Cells_L), 0)) %>% 
+    group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, TaxonName) %>%
+    summarise(Cells_L = sum(Cells_L), .groups = "drop") %>% 
+    as.data.frame()     
+  NRSSpecP1 <- rbind(NRSSpecP1, spec)
+}
+
+NRSSpecP1 <- NRSSpecP1 %>% 
+  group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, TaxonName) %>%
+  summarise(Cells_L = max(Cells_L), .groups = "drop") %>% 
+  arrange(-desc(TaxonName)) %>% 
+  as.data.frame() 
+# select maximum value of duplicates, but leave -999 for all other occurences as not regularly identified
+
+NRSSpecP <-  NRSSpecP1 %>% 
+  pivot_wider(names_from = TaxonName, values_from = Cells_L, values_fill = list(Cells_L = 0)) %>% 
+  arrange(desc(SampleDateLocal))  %>% 
+  mutate(SampleDateLocal = as.character(SampleDateLocal))
+
+fwrite(NRSSpecP, file = paste0(outD,.Platform$file.sep,"NRS_phyto_species_mat.csv"), row.names = FALSE)
+
+
+
+
+
+
+#### NRS Zooplankton #### #################################################################################################################################
+# Bring in all NRS zooplankton samples
+NRSZsamp <- read_csv(paste0(rawD,.Platform$file.sep,"ZSampNRS.csv"), na = "(null)") %>% 
+  rename(Sample = SAMPLE, Station = STATION, Latitude = LATITUDE, Longitude = LONGITUDE, SampleDateLocal = SAMPLEDATE, NRScode = NRS_CODE) %>%
+  mutate(Year = year(SampleDateLocal),
+         Month = month(SampleDateLocal),
+         Day = day(SampleDateLocal),
+         Time_24hr = str_sub(SampleDateLocal, -8, -1)) # hms doesn"t seem to work on 00:00:00 times
+
+# Bring in plankton data
+NRSZdat <- read_csv(paste0(rawD,.Platform$file.sep,"NRS_zoop_raw.csv"), na = "(null)") %>%
+  rename(Sample = SAMPLE, TaxonName = TAXON_NAME, Copepod = TAXON_GROUP, TaxonGroup = TAXON_GRP01, 
+         Genus = GENUS, Species = SPECIES, ZAbund_m3 = TAXON_PER_M3)
+
+# Bring in Change Log
+NRSZcl <- read_csv(paste0(rawD,.Platform$file.sep,"ChangeLogNRSZ.csv"), na = "(null)") %>%
+  rename(TaxonName = TAXON_NAME, StartDate = START_DATE, ParentName = PARENT_NAME)
+
+#### Raw Zooplankton ####
+
+NRSRawZ1 <- left_join(NRSZsamp, NRSZdat, by = "Sample") %>% 
+  select(-c(Sample, Copepod, TaxonGroup, Genus, Species)) %>% 
+  arrange(-desc(TaxonName)) 
+
+NRSRawZ <- NRSRawZ1 %>% 
+  pivot_wider(names_from = TaxonName, values_from = ZAbund_m3, values_fill = list(ZAbund_m3 = 0)) %>% 
+  arrange(desc(SampleDateLocal)) %>% 
+  mutate(SampleDateLocal = as.character(SampleDateLocal))
+
+fwrite(NRSRawP, file = paste0(outD,.Platform$file.sep,"NRS_zoop_raw_mat.csv"), row.names = FALSE)
+
+#### Higher Trophic Groups ####
+nrsHTGZ1 <- NRSZdat %>% 
+  group_by(Sample, TaxonGroup) %>% 
+  summarise(ZAbund_m3 = sum(ZAbund_m3, na.rm = TRUE), .groups = "drop") %>%
+  filter(!TaxonGroup %in% c("Other")) 
+
+nrsHTGZ1 <-  NRSZsamp %>% 
+  left_join(nrsHTGZ1, by = "Sample") %>% 
+  mutate(TaxonGroup = ifelse(is.na(TaxonGroup), "Copepod", TaxonGroup),
+         ZAbund_m3 = ifelse(is.na(ZAbund_m3), 0, ZAbund_m3)) %>% arrange(-desc(TaxonGroup))
+
+nrsHTGZ <-  nrsHTGZ1 %>% 
+  pivot_wider(names_from = TaxonGroup, values_from = ZAbund_m3, values_fill = list(ZAbund_m3 = 0)) %>% 
+  arrange(desc(SampleDateLocal)) %>% 
+  select(-Sample) %>% 
+  mutate(SampleDateLocal = as.character(SampleDateLocal))
+
+fwrite(nrsHTGZ, file = paste0(outD,.Platform$file.sep,"NRS_zoop_HTG_mat.csv"), row.names = FALSE)
+
+#### Genus ####
+
+# Check genus are effected by change log
+nrszlg <- NRSZcl %>% 
+  mutate(genus1 = word(TaxonName, 1),
+         genus2 = word(ParentName, 1)) %>%
+  mutate(same = ifelse(genus1==genus2, "yes", "no")) %>%
+  filter(same == "no")# no changes at genera level
+
+# for non change log species
+NRSGenZ1 <- NRSZdat %>% 
+  filter(!TaxonName %in% levels(as.factor(nrszlg$TaxonName))) %>% 
+  group_by(Sample, Genus) %>% 
+  summarise(ZAbund_m3 = sum(ZAbund_m3, na.rm = TRUE), .groups = "drop") %>% 
+  drop_na(Genus) 
+
+NRSGenZ1 <- NRSZsamp %>% left_join(NRSGenZ1, by = "Sample") %>% 
+  mutate(StartDate = ymd("2007-12-19"),
+         Genus = ifelse(is.na(Genus), "Acanthoica", word(Genus,1)), # bin subgenera together
+         ZAbund_m3 = ifelse(is.na(ZAbund_m3), 0, ZAbund_m3))  %>% 
+  group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
+  summarise(ZAbund_m3 = sum(ZAbund_m3), .groups = "drop") %>% 
+  as.data.frame()
+
+# add change log species with -999 for NA"s and real absences as 0"s
+NRSGenP2 <- NRSZdat %>% 
+  filter(TaxonName %in% levels(as.factor(nrszlg$TaxonName))) %>% 
+  left_join(NRSZcl, by = "TaxonName") %>%
+  mutate(Genus = as_factor(Genus)) %>% 
+  drop_na(Genus) %>%
+  group_by(Sample, StartDate, Genus) %>% 
+  summarise(ZAbund_m3 = sum(ZAbund_m3, na.rm = TRUE), .groups = "drop") 
+
+for (i in 1:nlevels(NRSGenP2$Genus)) {
+  Dates <- as.data.frame(NRSGenP2) %>% 
+    filter(Genus == Genus[i]) %>% 
+    slice(1) %>% 
+    droplevels()
+  
+  gen <- as.data.frame(NRSGenP2) %>% 
+    filter(Genus == Genus[i]) %>% 
+    droplevels() 
+  
+  gen <- NRSZsamp %>% 
+    left_join(gen, by = "Sample") %>%
+    mutate(StartDate = replace(StartDate, is.na(StartDate), Dates$StartDate),
+           Genus = replace(Genus, is.na(Genus), Dates$Genus),
+           ZAbund_m3 = replace(ZAbund_m3, StartDate>SampleDateLocal, -999), 
+           ZAbund_m3 = replace(ZAbund_m3, StartDate<SampleDateLocal & is.na(ZAbund_m3), 0)) %>% 
+    group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
+    summarise(ZAbund_m3 = sum(ZAbund_m3), .groups = "drop") %>% 
+    as.data.frame()     
+  NRSGenZ1 <- rbind(NRSGenZ1, gen)
+}
+
+NRSGenZ1 <- NRSGenZ1 %>% 
+  group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
+  summarise(ZAbund_m3 = max(ZAbund_m3), .groups = "drop") %>% 
+  arrange(-desc(Genus)) %>% 
+  as.data.frame() 
+# select maximum value of duplicates, but leave -999 for all other occurences as not regularly identified
+
+NRSGenZ <-  NRSGenZ1 %>% 
+  pivot_wider(names_from = Genus, values_from = ZAbund_m3, values_fill = list(ZAbund_m3 = 0)) %>% 
+  arrange(desc(SampleDateLocal)) %>% 
+  mutate(SampleDateLocal = as.character(SampleDateLocal))
+
+fwrite(NRSGenZ, file = paste0(outD,.Platform$file.sep,"NRS_zoop_genus_mat.csv"), row.names = FALSE)
+
+#### Copepods ####
+
+# Check at what level we need change log
+nrsclc <- NRSZcl %>% 
+  mutate(same = ifelse(TaxonName == ParentName, "yes", "no")) %>%
+  filter(same == "no") # no changes at genera level
+
+# for non change log species
+
+NRSCop1 <- NRSZdat %>% 
+  filter(!TaxonName %in% levels(as.factor(nrsclc$TaxonName)) & Copepod =="COPEPOD"
+         & Species != "spp." & !is.na(Species) & !grepl("cf.", Species) & !grepl("grp", Species)) %>% 
+  mutate(Species = paste0(Genus," ", word(Species,1))) %>% # bin complexes
+  group_by(Sample, Species) %>% 
+  summarise(ZAbund_m3 = sum(ZAbund_m3, na.rm = TRUE), .groups = "drop")
+
+NRSCop1 <- NRSZsamp %>% left_join(NRSCop1, by = "Sample") %>% 
+  mutate(StartDate = ymd("2007-12-19"),
+         Species = ifelse(is.na(Species), "Calanus Australis", Species), # avoids nulls in pivot
+         ZAbund_m3 = ifelse(is.na(ZAbund_m3), 0, ZAbund_m3)) %>%  # avoids nulls in pivot
+  group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Species) %>%
+  summarise(ZAbund_m3 = sum(ZAbund_m3), .groups = "drop") %>% 
+  as.data.frame()
+
+# add change log species with -999 for NA"s and real absences as 0"s
+NRSCop2 <- NRSZdat %>% 
+  filter(TaxonName %in% levels(as.factor(nrsclc$TaxonName)) & Copepod =="COPEPOD"
+         & Species != "spp." & !is.na(Species) & !grepl("cf.", Species) & !grepl("grp", Species)) %>% 
+  mutate(Species = paste0(Genus," ", word(Species,1))) %>% # bin complexes
+  left_join(NRSZcl, by = "TaxonName") %>%
+  mutate(Species = as_factor(Species)) %>% 
+  drop_na(Species) %>%
+  group_by(Sample, StartDate, Species) %>% 
+  summarise(ZAbund_m3 = sum(ZAbund_m3, na.rm = TRUE), .groups = "drop") 
+
+for (i in 1:nlevels(NRSCop2$Species)) {
+  Dates <- as.data.frame(NRSCop2) %>% 
+    filter(Species == Species[i]) %>% 
+    slice(1) %>% 
+    droplevels()
+  
+  copes <- as.data.frame(NRSCop2) %>% 
+    filter(Species == Species[i]) %>% 
+    droplevels() 
+  
+  copes <- NRSZsamp %>% 
+    left_join(copes, by = "Sample") %>%
+    mutate(StartDate = replace(StartDate, is.na(StartDate), Dates$StartDate),
+           Species = replace(Species, is.na(Species), Dates$Species),
+           ZAbund_m3 = replace(ZAbund_m3, StartDate>SampleDateLocal, -999), 
+           ZAbund_m3 = replace(ZAbund_m3, StartDate<SampleDateLocal & is.na(ZAbund_m3), 0)) %>% 
+    group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Species) %>%
+    summarise(ZAbund_m3 = sum(ZAbund_m3), .groups = "drop") %>% 
+    as.data.frame()     
+  NRSCop1 <- rbind(NRSCop1, copes)
+}
+
+NRSCop1 <- NRSCop1 %>% 
+  group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Species) %>%
+  summarise(ZAbund_m3 = max(ZAbund_m3), .groups = "drop") %>% 
+  arrange(-desc(Species)) %>% 
+  as.data.frame() 
+# select maximum value of duplicates, but leave -999 for all other occurences as not regularly identified
+
+NRSCop <-  NRSCop1 %>% 
+  pivot_wider(names_from = Species, values_from = ZAbund_m3, values_fill = list(ZAbund_m3 = 0)) %>% 
+  arrange(desc(SampleDateLocal)) %>% 
+  mutate(SampleDateLocal = as.character(SampleDateLocal))
+
+fwrite(NRSCop, file = paste0(outD,.Platform$file.sep,"NRS_zoop_copes_mat.csv"), row.names = FALSE)
+
+#### Non-Copepods ####
+# for non change log species
+
+NRSnCop1 <- NRSZdat %>% 
+  filter(!TaxonName %in% levels(as.factor(nrsclc$TaxonName)) & Copepod =="NON-COPEPOD"
+         & Species != "spp." & !is.na(Species) & !grepl("cf.", Species) & !grepl("grp", Species)) %>% 
+  mutate(Species = paste0(Genus," ", word(Species,1))) %>% # bin complexes
+  group_by(Sample, Species) %>% 
+  summarise(ZAbund_m3 = sum(ZAbund_m3, na.rm = TRUE), .groups = "drop")
+
+NRSnCop1 <- NRSZsamp %>% left_join(NRSnCop1, by = "Sample") %>% 
+  mutate(StartDate = ymd("2007-12-19"),
+         Species = ifelse(is.na(Species), "Calanus Australis", Species), # avoids nulls in pivot
+         ZAbund_m3 = ifelse(is.na(ZAbund_m3), 0, ZAbund_m3)) %>%  # avoids nulls in pivot
+  group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Species) %>%
+  summarise(ZAbund_m3 = sum(ZAbund_m3), .groups = "drop") %>% 
+  as.data.frame()
+
+# add change log species with -999 for NA"s and real absences as 0"s
+NRSnCop2 <- NRSZdat %>% 
+  filter(TaxonName %in% levels(as.factor(nrsclc$TaxonName)) & Copepod =="NON-COPEPOD"
+         & Species != "spp." & !is.na(Species) & !grepl("cf.", Species) & !grepl("grp", Species)) %>% 
+  mutate(Species = paste0(Genus," ", word(Species,1))) %>% # bin complexes
+  left_join(NRSZcl, by = "TaxonName") %>%
+  mutate(Species = as_factor(Species)) %>%
+  drop_na(Species) %>%
+  group_by(Sample, StartDate, Species) %>%
+  summarise(ZAbund_m3 = sum(ZAbund_m3, na.rm = TRUE), .groups = "drop") 
+
+for (i in 1:nlevels(NRSnCop2$Species)) {
+  Dates <- as.data.frame(NRSnCop2) %>%
+    filter(Species == Species[i]) %>% 
+    slice(1) %>% 
+    droplevels()
+  
+  ncopes <- as.data.frame(NRSnCop2) %>% 
+    filter(Species == Species[i]) %>% 
+    droplevels() 
+  
+  ncopes <- NRSZsamp %>% left_join(ncopes, by = "Sample") %>%
+    mutate(StartDate = replace(StartDate, is.na(StartDate), Dates$StartDate),
+           Species = replace(Species, is.na(Species), Dates$Species),
+           ZAbund_m3 = replace(ZAbund_m3, StartDate>SampleDateLocal, -999), 
+           ZAbund_m3 = replace(ZAbund_m3, StartDate<SampleDateLocal & is.na(ZAbund_m3), 0)) %>% 
+    group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Species) %>%
+    summarise(ZAbund_m3 = sum(ZAbund_m3), .groups = "drop") %>% 
+    as.data.frame()     
+  NRSnCop1 <- rbind(NRSnCop1, ncopes)
+}
+
+NRSnCop1 <- NRSnCop1 %>% 
+  group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Species) %>%
+  summarise(ZAbund_m3 = max(ZAbund_m3), .groups = "drop") %>% 
+  arrange(-desc(Species)) %>% 
+  as.data.frame() 
+# select maximum value of duplicates, but leave -999 for all other occurrences as not regularly identified
+
+NRSnCop <- NRSnCop1 %>% 
+  pivot_wider(names_from = Species, values_from = ZAbund_m3, values_fill = list(ZAbund_m3 = 0)) %>% 
+  arrange(desc(SampleDateLocal)) %>% 
+  mutate(SampleDateLocal = as.character(SampleDateLocal))
+
+fwrite(NRSnCop, file = paste0(outD,.Platform$file.sep,"NRS_zoop_noncopes_mat.csv"), row.names = FALSE)
+
+# test <- read_csv(paste0(outD,.Platform$file.sep,"NRS_zoop_noncopes_mat.csv"))
