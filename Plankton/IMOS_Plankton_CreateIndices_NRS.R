@@ -27,7 +27,9 @@ outD <- "Output"
 # ensure we have all trips accounted for 
 # note there are circumstances where a trip won't have a phyto and a zoo samples due to loss of sample etc.
 
-NRSdat <- get_NRSTrips() %>% select(-SampleDepth_m) %>% distinct()
+NRSdat <- get_NRSTrips() %>% 
+  select(-SampleDepth_m) %>% 
+  distinct()
 
 dNRSdat <- distinct(NRSdat, NRScode, .keep_all = TRUE) %>%  # Distinct rows for satellite, should be anyway
   rename(Date = SampleDateLocal) %>% 
@@ -107,13 +109,18 @@ Nuts <- Chemistry %>%
 Pigments <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_pigments.csv"), na = "(null)") %>% 
   select(NRS_TRIP_CODE, SAMPLE_DEPTH_M, DV_CPHL_A_AND_CPHL_A) %>% 
   rename(NRScode = NRS_TRIP_CODE, SampleDepth_m = SAMPLE_DEPTH_M, Chla = DV_CPHL_A_AND_CPHL_A) %>%
-  filter(SampleDepth_m <= 20) %>% # take average of top 10m as a surface value for SST and CHL
+  filter(SampleDepth_m <= 25) %>% # take average of top 10m as a surface value for SST and CHL
   # filter(SampleDepth_m == "WC") %>% 
   mutate(NRScode = str_replace(NRScode, "NRS", "")) %>% 
   group_by(NRScode) %>% 
   summarise(Chla_mgm3 = mean(Chla, na.rm = TRUE),
             .groups = "drop") %>%
   untibble()
+
+# 
+# dat <- left_join(Pigments, NRSdat, by = "NRScode")
+# dat$SampleDepth_m <- as.numeric(str_replace_all(dat$SampleDepth_m, "WC", "150"))
+# ggplot(data = dat, aes(x = Year, y = SampleDepth_m)) + geom_point()
 
 # Total Zooplankton Abundance
 ZooData <- NRSZsamp %>% 
@@ -190,6 +197,9 @@ CopepodEvenness <- n %>%
 PhytoData <- NRSPsamp %>% 
   left_join(NRSPdat, by = "Sample") %>% 
   filter(TaxonGroup != 'Other')
+
+# PhytoData <- PhytoData %>%
+#   filter(str_detect(TaxonName, "Flagellate <10", negate = TRUE)) # Remove flagellates
 
 PhytoC <- PhytoData %>% 
   select(NRScode, TaxonGroup, Cells_L, Biovolume_uM3_L) %>% 
