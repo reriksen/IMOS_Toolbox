@@ -44,7 +44,7 @@ CTD <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_CTD.csv"), na = "(null)",
          CTDTemperature = TEMP, CTDPAR_umolm2s = PAR,
          CTDConductivity_sm = CNDC, CTDSpecificConductivity_Sm = SPEC_CNDC, CTDSalinity = PSAL, 
          CTDTurbidity_ntu = TURB, CTDChlF_mgm3 = CHLF) %>%
-  filter(SampleDepth_m <11) %>% # take average of top 10m as a surface value for SST and CHL
+  filter(SampleDepth_m < 15) %>% # take average of top 10m as a surface value for SST and CHL, this is removing 17 casts as of nov 2020
   group_by(NRScode) %>% 
   summarise(CTD_SST_C = mean(CTDTemperature, na.rm = TRUE),
             CTDChlF_mgm3 = mean(CTDChlF_mgm3, na.rm = TRUE),
