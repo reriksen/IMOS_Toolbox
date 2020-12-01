@@ -1,0 +1,196 @@
+---
+title: "Downloading Satellite Data from a THREDDS Server"
+author: "Jason D Everett"
+date: "01/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+## What is THREDDS
+
+## Finding a THREDDS catalog
+
+
+## Using IMOS THREDDS for satellite data
+
+You can find the AODN thredds catalog here:
+http://rs-data1-mel.csiro.au/thredds/catalog/imos-srs/catalog.html
+ and
+http://thredds.aodn.org.au/thredds/catalog/catalog.html
+
+Note that each have a 'catalog.html' extension. As you navigate around, you will notice that it is important to keep this intact to allow your web browser to find the html listing of files.
+
+Now lets navigate through the directory structure to find some data. Go to http://rs-data1-mel.csiro.au/thredds/catalog/imos-srs/catalog.html (which has the satellite data)
+
+Click: `oc` (Ocean Colour) -> `aqua` (MODIS Aqua Satellite) -> `12mNy` (Average of all data - 12 months, all years)
+
+Notice the size of the files. Most are greater than 1 GB. Lots of data to download if you only want to use a small portion of the file.
+
+Click on the Chl file with the oci algorithm. 
+
+You'll see a page with a range of different DAPs (Data Access Protocols). We will use the OpenDAP protocol. Click on it.
+
+Here you can see lots of information about the file. This is the metadata within the file itself. The beauty of netcdf files is that they store all the metadata about the variables, conversions, original files, processing information, along with the data itself. All the dimesions are named and references so you can access the data by dimensions easily. Have a look at the various infomation which is on this page.
+
+You could subset the data from here by entering limits in the text boxes and downloading the data, but we don't want to do this because it won't be reproducible. We want all our science to be reproducible. Instead we are going to use the actual data location (Data URL) to query and download what we want.
+http://rs-data1-mel.csiro.au/thredds/dodsC/imos-srs/oc/aqua/12mNy/2003-2019.01-12.chl_oci_mean_mean_mean.nc
+
+
+## Downloading and Plotting a spatial map.
+
+Start with the required libraries
+
+```{r}
+library(tidync)
+library(raster)
+library(sf)
+library(lubridate)
+library(rnaturalearth)
+library(tidyverse)
+```
+
+
+Setup the download parameters
+```{r}
+
+dat <- tibble(Lat_Min = -30, 
+              Lat_Max = -5,
+              Lon_Min = 140,
+              Lon_Max = 160)
+
+imos_url <- "http://rs-data1-mel.csiro.au/thredds/dodsC/imos-srs/oc/aqua/12mNy/2003-2019.01-12.chl_oci_mean_mean_mean.nc"
+```
+
+
+Now use tidync to subset and download the netcdf file.
+```{r}
+out <- tidync(imos_url) %>% # The filename (local or online)
+  hyper_filter(longitude = longitude >= dat$Lon_Min & longitude <= dat$Lon_Max, # nc files on thredds can be subset
+               latitude = latitude >= dat$Lat_Min & latitude <= dat$Lat_Max) %>%
+  hyper_tibble(select_var = "chl_oci_mean_mean_mean") %>% 
+  rename(Chl = chl_oci_mean_mean_mean)# which variable and format to return
+```
+
+Now plot the spatial output.
+
+```{r}
+
+(gg <- ggplot(data = out, aes(x = longitude, y = latitude, fill = log10(Chl))) +
+    geom_tile() +
+    scale_fill_continuous(type = "viridis", limits = c(-1.5, 1), oob = scales::squish) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)))
+
+```
+
+
+The geographic scale is a bit wonky because of the large range of latitude we are working over.
+
+A better approach would be to map the data. We can do that by converting the dataframe to an `sf` object. Here we also demonstrate the `hyper_array`.
+
+```{r}
+
+out <- tidync(imos_url) %>% # The filename (local or online)
+  hyper_filter(longitude = longitude >= dat$Lon_Min & longitude <= dat$Lon_Max, # nc files on thredds can be subset
+               latitude = latitude >= dat$Lat_Min & latitude <= dat$Lat_Max) %>%
+  hyper_array(select_var = "chl_oci_mean_mean_mean")
+
+r_sf <- raster(t(out$chl_oci_mean_mean_mean),xmn=dat$Lon_Min, xmx=dat$Lon_Max, ymn=dat$Lat_Min, ymx=dat$Lat_Max, crs = "+proj=longlat +datum=WGS84") %>% 
+  aggregate(4, fun=mean) %>% 
+  rasterToPolygons() %>% 
+  st_as_sf(coords = c("x", "y")) %>% 
+  drop_na()
+
+# Add land
+world_sf <- ne_countries(scale = "medium", returnclass = "sf")
+
+ggplot() +
+  geom_sf(data = r_sf, aes(colour = log10(layer))) + # Satellite data
+  geom_sf(data = world_sf, size = 0.05, fill = "grey40") + # Land data
+  scale_colour_continuous(type = "viridis", limits = c(-1.5, 1), oob = scales::squish) +
+  scale_x_continuous(limits = c(dat$Lon_Min, dat$Lon_Max), expand = c(0,0)) +
+  scale_y_continuous(limits = c(dat$Lat_Min, dat$Lat_Max), expand = c(0,0))
+
+
+```
+
+# Timeseries
+
+Where thredds servers come into their own, is when you need to download lots of small parcels of data. Rather than downloading 100 files of 1GB each, we can download 100 timesteps of a few KBs.
+
+This time lets do SST. We will download 4 years of monthly data at the North Stradbroke Island NRS. 
+
+Similar to before, we will define the range in the advance, but this time we will take an average of the pixels around the NRS.
+
+First lets go back to the AODN satellite page so we can get the actual url we need. Start at: http://rs-data1-mel.csiro.au/thredds/catalog/imos-srs/catalog.html
+
+```{r}
+# NRS Location
+NRS_Lon <- 153.562
+NRS_Lat <- -27.345
+  
+dat <- tibble(Lat_Min = NRS_Lat - 0.01, 
+              Lat_Max = NRS_Lat + 0.01,
+              Lon_Min = NRS_Lon - 0.01,
+              Lon_Max = NRS_Lon + 0.01,
+              Date_Min = ymd("2003-01-01"),
+              Date_Max = ymd("2007-01-01"),)
+
+n_mths <- interval(dat$Date_Min,dat$Date_Max) %/% months(1) # How many months
+all_dates <- dat$Date_Min + months(0:(n_mths-1)) # A vector of dates
+
+out <- tibble(Date = all_dates, SST = NA)
+for (t in 1:n_mths){
+  
+    mth <- str_pad(month(all_dates[t]),2,"left", pad="0")
+    yr <- year(all_dates[t])
+    
+  imos_url <- paste0("http://rs-data1-mel.csiro.au/thredds/dodsC/imos-srs/oc/aqua/1m/",yr,"/",yr, mth,".sst.nc")
+  
+  print(paste0("Downloading Year = ",yr, " and Month = ",mth,""))
+  
+   temp <- tidync(imos_url) %>% # The filename (local or online)
+    hyper_filter(longitude = longitude >= dat$Lon_Min & longitude <= dat$Lon_Max, # nc files on thredds can be subset
+               latitude = latitude >= dat$Lat_Min & latitude <= dat$Lat_Max) %>%
+    hyper_tibble(select_var = "sst_mean") %>% 
+    group_by(time) %>% 
+    summarise(sst_mean = mean(sst_mean, na.rm = TRUE))
+    
+  out$SST[t] <- temp$sst_mean
+  rm(temp)
+
+}
+
+
+```
+
+## Plot Timeseries
+
+Now we can plot the satellite time series.
+
+```{r message=FALSE, warning=FALSE}
+
+(gg_sst <- ggplot(data = out, aes(x = Date, y = SST)) +
+  geom_point() +
+  geom_line() +
+  ggtitle("Mean monthly SST at North Stradbroke NRS") +
+  scale_x_date(expand = c(0.01,0.01)) +
+  scale_y_continuous(expand = c(0.01,0.01)))
+
+
+```
+
+
+
+
+
+
+
+
