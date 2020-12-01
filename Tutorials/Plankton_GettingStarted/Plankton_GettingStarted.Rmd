@@ -43,7 +43,7 @@ pre { /* Code block - determines code spacing between lines */
 </style>
 
 <img src="PNGs/IMOSlogo.png" width="300px" /> | | <span style="color:#1162a5ff; font-size:26px">How to access and use IMOS Plankton data in your Research</span>
------------- | --- | ------------
+--------------- | --- | ------------
 
 <span style="font-size:16px;"> **Authors:** Jason Everett (UNSW, UQ), Claire Davies (CSIRO) and Anthony Richardson (UQ, CSIRO) </span>
 
