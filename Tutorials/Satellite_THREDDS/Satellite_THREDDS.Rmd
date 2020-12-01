@@ -1,8 +1,14 @@
 ---
 title: "Downloading Satellite Data from a THREDDS Server"
-author: "Jason D Everett"
+author: "Jason D Everett (UQ)"
 date: "01/12/2020"
-output: html_document
+output: 
+  html_document: 
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+
 ---
 
 ```{r setup, include=FALSE}
@@ -13,21 +19,38 @@ knitr::opts_chunk$set(
 )
 ```
 
-## What is THREDDS
+# What is THREDDS
 
-## Finding a THREDDS catalog
+THREDDS (Thematic Realtime Environmental Distributed Data Services) data server (TDS) was developed by Unidata (UCAR) and allows for browsing, downloading and programmatically accessing scientific data. Data access is provided by OPeNDAP, OGC WMS and WCS, HTTP, and other remote data access protocols.
+
+OPeNDAP is a protocol enabling data access and subsetting through the web.
+
+Other protocols include:    
+**NetCDF Subset Service (NCSS)**: Web service for subsetting files that can be read by the netCDF java library.     
+**Web Map Service (WMS)**: OGC web service for requesting static images of data.    
+**Web Coverage Service (WCS)**: OGC web service for requesting data in some output format.    
+**HTTP File Download**: Direct downloading for files
+
+# Finding a THREDDS catalog
+
+Many data portals will have a THREDDS data server behind them. IMOS/AODN does for example: http://thredds.aodn.org.au/thredds/catalog/catalog.html
+
+Other THREDDS catalogs include:     
+**NCI**: http://dap.nci.org.au/thredds/catalog.html     
+**NOAA**: https://data.nodc.noaa.gov/thredds/catalog.html     
+**eReefs**: http://ereeftds.bom.gov.au/ereefs/tds/catalog.html     
+**JPL**: https://opendap.jpl.nasa.gov/opendap/     
 
 
-## Using IMOS THREDDS for satellite data
+# Using IMOS THREDDS for satellite data
 
-You can find the AODN thredds catalog here:
-http://rs-data1-mel.csiro.au/thredds/catalog/imos-srs/catalog.html
- and
-http://thredds.aodn.org.au/thredds/catalog/catalog.html
+You can find the AODN thredds catalog here:    
+http://rs-data1-mel.csiro.au/thredds/catalog/imos-srs/catalog.html and    
+http://thredds.aodn.org.au/thredds/catalog/catalog.html    
 
 Note that each have a 'catalog.html' extension. As you navigate around, you will notice that it is important to keep this intact to allow your web browser to find the html listing of files.
 
-Now lets navigate through the directory structure to find some data. Go to http://rs-data1-mel.csiro.au/thredds/catalog/imos-srs/catalog.html (which has the satellite data)
+Now lets navigate through the directory structure to find some data. Go to http://rs-data1-mel.csiro.au/thredds/catalog/imos-srs/catalog.html (which has the satellite data).
 
 Click: `oc` (Ocean Colour) -> `aqua` (MODIS Aqua Satellite) -> `12mNy` (Average of all data - 12 months, all years)
 
@@ -121,7 +144,7 @@ ggplot() +
 
 ```
 
-# Timeseries
+# Downloading a Timeseries
 
 Where thredds servers come into their own, is when you need to download lots of small parcels of data. Rather than downloading 100 files of 1GB each, we can download 100 timesteps of a few KBs.
 
@@ -145,7 +168,15 @@ dat <- tibble(Lat_Min = NRS_Lat - 0.01,
 
 n_mths <- interval(dat$Date_Min,dat$Date_Max) %/% months(1) # How many months
 all_dates <- dat$Date_Min + months(0:(n_mths-1)) # A vector of dates
+```
 
+No lets loop through the months to get the data. 
+
+Unfortunately the IMOS data is stored as Lon x Lat with time in a new file so we have to download each date individually. Some datasets will be stored as a data-cube (Data stored as Lon x Lat x Time) meaning we can get all times from the same location at once.
+
+Here we are downloading data from the same location to create a time-series. You can also use this approach to get satellite/model data for a target which is moving in time and space, such as a research voyage, a CPR, a tagged animal or a glider. Anything which has a time, lat and lon reference.
+
+```{r}
 out <- tibble(Date = all_dates, SST = NA)
 for (t in 1:n_mths){
   
@@ -184,13 +215,7 @@ Now we can plot the satellite time series.
   scale_x_date(expand = c(0.01,0.01)) +
   scale_y_continuous(expand = c(0.01,0.01)))
 
-
 ```
-
-
-
-
-
 
 
 
