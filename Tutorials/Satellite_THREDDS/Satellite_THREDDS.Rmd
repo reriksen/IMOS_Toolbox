@@ -41,6 +41,8 @@ Other THREDDS catalogs include:
 **eReefs**: http://ereeftds.bom.gov.au/ereefs/tds/catalog.html     
 **JPL**: https://opendap.jpl.nasa.gov/opendap/     
 
+Unfortuantely it is a bit hit and miss as to whether your data will be available by THREDDS, but its worth checking if you need to use large datasets which are easily subsettable.
+
 
 # Using IMOS THREDDS for satellite data
 
@@ -116,7 +118,9 @@ Now plot the spatial output.
 
 The geographic scale is a bit wonky because of the large range of latitude we are working over.
 
-A better approach would be to map the data. We can do that by converting the dataframe to an `sf` object. Here we also demonstrate the `hyper_array`.
+A better approach would be to map the data. We can do that by converting the dataframe to an `sf` object. Here we also demonstrate the `hyper_array` which is much more memory friendly.
+
+Lets start by downloading the data so we can start afresh.
 
 ```{r}
 
@@ -125,14 +129,22 @@ out <- tidync(imos_url) %>% # The filename (local or online)
                latitude = latitude >= dat$Lat_Min & latitude <= dat$Lat_Max) %>%
   hyper_array(select_var = "chl_oci_mean_mean_mean")
 
+```
+
+Then we concert the `hyper_array` (essentially a matrix) to a `raster` object, then to an `sf` object. The reason I convert to a raster is so we can change from spatial data points to polygons which are much nicer to plot (There are other ways to do this but I find teh slightly convoluted way to be the easiest and fastest). 
+
+```{r}
 r_sf <- raster(t(out$chl_oci_mean_mean_mean),xmn=dat$Lon_Min, xmx=dat$Lon_Max, ymn=dat$Lat_Min, ymx=dat$Lat_Max, crs = "+proj=longlat +datum=WGS84") %>% 
   aggregate(4, fun=mean) %>% 
   rasterToPolygons() %>% 
   st_as_sf(coords = c("x", "y")) %>% 
   drop_na()
+```
 
-# Add land
-world_sf <- ne_countries(scale = "medium", returnclass = "sf")
+Now lets plot it as before, but this time we use `geom_sf` which deals with the spatial data, using the correct projection, and getting the aspect ratio correct. Adding the land makes it look pretty. For this we can use the `rnaturalearth` package.
+```{r}
+
+world_sf <- ne_countries(scale = "medium", returnclass = "sf") # Add land
 
 ggplot() +
   geom_sf(data = r_sf, aes(colour = log10(layer))) + # Satellite data
@@ -140,7 +152,6 @@ ggplot() +
   scale_colour_continuous(type = "viridis", limits = c(-1.5, 1), oob = scales::squish) +
   scale_x_continuous(limits = c(dat$Lon_Min, dat$Lon_Max), expand = c(0,0)) +
   scale_y_continuous(limits = c(dat$Lat_Min, dat$Lat_Max), expand = c(0,0))
-
 
 ```
 
@@ -159,6 +170,7 @@ First lets go back to the AODN satellite page so we can get the actual url we ne
 NRS_Lon <- 153.562
 NRS_Lat <- -27.345
   
+# Create a tibble to save all the info together
 dat <- tibble(Lat_Min = NRS_Lat - 0.01, 
               Lat_Max = NRS_Lat + 0.01,
               Lon_Min = NRS_Lon - 0.01,
@@ -166,8 +178,9 @@ dat <- tibble(Lat_Min = NRS_Lat - 0.01,
               Date_Min = ymd("2003-01-01"),
               Date_Max = ymd("2007-01-01"),)
 
-n_mths <- interval(dat$Date_Min,dat$Date_Max) %/% months(1) # How many months
-all_dates <- dat$Date_Min + months(0:(n_mths-1)) # A vector of dates
+n_mths <- interval(dat$Date_Min,dat$Date_Max) %/% months(1) # How many months in the date range
+all_dates <- dat$Date_Min + months(0:(n_mths-1)) # A vector of all dates
+out <- tibble(Date = all_dates, SST = NA) # Create a dataframe with preallocated slots
 ```
 
 No lets loop through the months to get the data. 
@@ -177,7 +190,6 @@ Unfortunately the IMOS data is stored as Lon x Lat with time in a new file so we
 Here we are downloading data from the same location to create a time-series. You can also use this approach to get satellite/model data for a target which is moving in time and space, such as a research voyage, a CPR, a tagged animal or a glider. Anything which has a time, lat and lon reference.
 
 ```{r}
-out <- tibble(Date = all_dates, SST = NA)
 for (t in 1:n_mths){
   
     mth <- str_pad(month(all_dates[t]),2,"left", pad="0")
@@ -198,7 +210,6 @@ for (t in 1:n_mths){
   rm(temp)
 
 }
-
 
 ```
 
