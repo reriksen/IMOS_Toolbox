@@ -7,6 +7,8 @@
 ## 6th October 2020
 
 suppressPackageStartupMessages({
+  library(lutz)
+  library(purrr)
   library(lubridate)
   library(data.table)
   library(tidyverse)
@@ -24,6 +26,8 @@ outD <- "Output"
 # Each trip and depth combination for water quality parameters
 # the number of rows in this table should equal that in comb, if not look out for duplicates and replicates
 NRSTrips <- get_NRSTrips()
+
+# you will get a warning about the fast method, this actually works better than the accurate method for this data set. 
 
 # Hydrochemistry data 
 Chemistry <- read_csv(paste0(rawD,.Platform$file.sep,"chemistry.csv"), na = c("(null)", NaN)) %>% 
@@ -75,6 +79,7 @@ Pigments <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_pigments.csv"), na = "(
   mutate(SampleDepth_m = as.character(SampleDepth_m),
          NRScode = substring(NRScode,4)) %>% 
   filter(QC_FLAG %in% c(0,1,2,5,8)) %>% # keep data flagged as good
+  select(-QC_FLAG) %>%
   untibble()
 
 # Flow cytometry picoplankton data
@@ -129,6 +134,14 @@ CTD <- read_csv(paste0(rawD,.Platform$file.sep,"nrs_CTD.csv"), na = "(null)",
          CTDConductivity_sm = CNDC, CTDSpecificConductivity_Sm = SPEC_CNDC, 
          CTDSalinity = PSAL, CTDTurbidity_ntu = TURB, CTDChlF_mgm3 = CHLF) %>%
     mutate(SampleDepth_m = as.character(round(SampleDepth_m, 0))) %>% 
+  select(-c(PRES, CTDSpecificConductivity_Sm)) %>%
+  group_by(NRScode, SampleDepth_m) %>% summarise(CTDDensity_kgm3 = mean(CTDDensity_kgm3, na.rm = TRUE),
+                                                 CTDTemperature = mean(CTDTemperature, na.rm = TRUE),
+                                                 CTDPAR_umolm2s = mean(CTDPAR_umolm2s, na.rm = TRUE),
+                                                 CTDConductivity_sm = mean(CTDConductivity_sm, na.rm = TRUE),
+                                                 CTDSalinity = mean(CTDSalinity, na.rm = TRUE),
+                                                 CTDChlF_mgm3 = mean(CTDChlF_mgm3, na.rm = TRUE),
+                                                 CTDTurbidity_ntu = mean(CTDTurbidity_ntu, na.rm = TRUE)) %>%
   untibble()
 
 notrips <-  read_csv(paste0(rawD,.Platform$file.sep,"nrs_CTD.csv"), na = "(null)",
@@ -138,7 +151,7 @@ notrips <-  read_csv(paste0(rawD,.Platform$file.sep,"nrs_CTD.csv"), na = "(null)
 
 
 # Combined BGC data for each station at the sample depth
-BGC <- NRSTrips %>% 
+BGC <- NRSTrips %>% #mutate(IMOSsampleCode = paste0(NRScode, '_', ifelse(SampleDepth_m == 'WC', 'WC', str_pad(SampleDepth_m, 3, side = "left", "0")))) %>%
   left_join(ZBiomass %>% 
               select(NRScode, SampleDepth_m, Biomass_mgm3), by = c("NRScode", "SampleDepth_m")) %>%
   left_join(Secchi,  by = c("NRScode", "SampleDepth_m")) %>%
