@@ -151,7 +151,7 @@ notrips <-  read_csv(paste0(rawD,.Platform$file.sep,"nrs_CTD.csv"), na = "(null)
 
 
 # Combined BGC data for each station at the sample depth
-BGC <- NRSTrips %>% #mutate(IMOSsampleCode = paste0(NRScode, '_', ifelse(SampleDepth_m == 'WC', 'WC', str_pad(SampleDepth_m, 3, side = "left", "0")))) %>%
+BGC <- NRSTrips %>% mutate(IMOSsampleCode = paste0('NRS',NRScode, '_', ifelse(SampleDepth_m == 'WC', 'WC', str_pad(SampleDepth_m, 3, side = "left", "0")))) %>%
   left_join(ZBiomass %>% 
               select(NRScode, SampleDepth_m, Biomass_mgm3), by = c("NRScode", "SampleDepth_m")) %>%
   left_join(Secchi,  by = c("NRScode", "SampleDepth_m")) %>%
