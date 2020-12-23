@@ -39,8 +39,8 @@ maptext <- mapdata %>% group_by(region) %>% summarise(textno = n()) %>% # make t
 PCImap <- PCIdata %>% mutate(Latitude = round(Latitude/0.5, 0)*0.5, 
                              Longitude = round(Longitude/0.5, 0)*0.5,
                              mon = month(SampleDate, label = TRUE),
-                             monn = quarter(SampleDate)) %>%
-  group_by(Latitude, Longitude, monn, region) %>% summarise(PCI = round(mean(PCI)/0.5,0)*0.5)
+                             season = quarter(SampleDate)) %>%
+  group_by(Latitude, Longitude, season, region) %>% summarise(PCI = round(mean(PCI)/0.5,0)*0.5)
 
 # parameters used in mapping   
 aus <-  ne_countries(country = c('australia', 'papua new guinea', 'indonesia'), scale = "medium", returnclass = 'sf')   
@@ -73,16 +73,15 @@ server <- function(input, output) {
     animation_slider(hide = T)
   })
   output$plot2 <-  renderPlotly({
-      p <- ggplot(PCImap) + geom_sf(data = aus, fill = "cornsilk") + 
-    geom_point(aes(x= Longitude, y = Latitude, color = PCI)) +
-    colscale +
-    facet_wrap(~monn) +
-    coord_sf() + labs(x="", y="") +
-    scale_y_continuous(limits = c(NA, 0), expand = c(0,0)) +
-    theme_bw() + theme(panel.background = element_rect(fill = "aliceblue"),
-                       legend.position = "none", 
-                       strip.background = element_blank())
-  ggplotly(p)
+    PCImap %>% plot_ly(x = ~Longitude, y = ~Latitude, color = ~PCI, colors = c("#FFFFFF", "#EDF8E9", "#C7E9C0", "#A1D99B", "#74C476", "#41AB5D", "#238B45", "#005A32"),
+                            frame = ~season, type = 'scattergeo', mode = "markers", showlegend = FALSE) %>%
+      layout(geo = list(showlegend = TRUE, 
+                        showland = TRUE,
+                        landcolor = toRGB("cornsilk"),
+                        showocean = TRUE, 
+                        oceancolor = toRGB("azure"),
+                        lataxis = list(range = c(-70, -8)),
+                        lonaxis = list(range = c(90, 175)))) 
   })
 }
 
@@ -145,33 +144,18 @@ ui <- dashboardPage(
 shinyApp(ui, server)
 
 ##############################################
-P <- map_data("world", "australia") %>% filter(region == 'Australia') %>% plot_ly(x = ~long, y = ~lat) %>% add_markers(colors = "black")
-P
 
-# using plot geo, doesn't allow selection of Australian portion of map only
-p <- PCImap %>% plot_ly(x = ~Longitude, y = ~Latitude, color = ~PCI, colors = c("#EDF8E9", "#C7E9C0", "#A1D99B", "#74C476", "#41AB5D", "#238B45", "#005A32"),
-                        frame = ~monn, type = 'scattergeo', mode = "markers") %>%
-  layout(geo = list(scope="world"),
-         xaxis = list(range = c(110, 160)),
-         yaxis = list(range = c(-60, -10)))
-p
 
-# make PCImap an sf obeject so that it can be the same data set as aus
-PCImapsf <- st_as_sf(PCImap, coords = c("Longitude", "Latitude"), crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
-test <- aus %>% st_join(PCImapsf)
-
-p <- plot_ly(test) %>%
-  add_trace(color = ~PCI, mode = 'markers', type = 'scatter')
-p
-
-p <-  PCImapsf %>% plot_geo(color = ~PCI, colors = c("#EDF8E9", "#C7E9C0", "#A1D99B", "#74C476", "#41AB5D", "#238B45", "#005A32"),
-                               frame = ~monn, ) 
-p
-
-%>%
-  add_trace(aus, color = I("cornsilk"), stroke = I("black"), span = I(1))
-p
-
+p <- ggplot(PCImap) + geom_sf(data = aus, fill = "cornsilk") + 
+  geom_point(aes(x= Longitude, y = Latitude, color = PCI)) +
+  colscale +
+  facet_wrap(~monn) +
+  coord_sf() + labs(x="", y="") +
+  scale_y_continuous(limits = c(NA, 0), expand = c(0,0)) +
+  theme_bw() + theme(panel.background = element_rect(fill = "aliceblue"),
+                     legend.position = "none", 
+                     strip.background = element_blank())
+ggplotly(p)
 
 
 
