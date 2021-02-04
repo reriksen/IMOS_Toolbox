@@ -49,7 +49,7 @@ NRSRawP <- NRSRawP1 %>%
 
 fwrite(NRSRawP, file = paste0(outD,.Platform$file.sep,"NRS_phyto_raw_mat.csv"), row.names = FALSE)
 
-#### Higher Trophic Groups ####
+#### Higher Trophic Groups Abund ####
 
 NRSHTGP1 <- NRSPdat %>% 
   group_by(Sample, TaxonGroup) %>% 
@@ -69,7 +69,7 @@ NRSHTGP <-  NRSHTGP1 %>%
 
 fwrite(NRSHTGP, file = paste0(outD,.Platform$file.sep,"NRS_phyto_HTG_mat.csv"), row.names = FALSE)
 
-#### Genus ####
+#### Genus Abund ####
 
 # Check genus are effected by change log
 nrslg <- NRSPcl %>% 
@@ -139,7 +139,7 @@ NRSGenP <-  NRSGenP1 %>%
 
 fwrite(NRSGenP, file = paste0(outD,.Platform$file.sep,"NRS_phyto_genus_mat.csv"), row.names = FALSE)
 
-#### Species ####
+#### Species Abund ####
 
 # Check at what level we need change log
 nrsls <- NRSPcl %>% 
@@ -209,6 +209,166 @@ NRSSpecP <-  NRSSpecP1 %>%
 
 fwrite(NRSSpecP, file = paste0(outD,.Platform$file.sep,"NRS_phyto_species_mat.csv"), row.names = FALSE)
 
+###########################################################################################
+#### Higher Trophic Groups BioV ####
+
+NRSHTGPB1 <- NRSPdat %>% 
+  group_by(Sample, TaxonGroup) %>% 
+  summarise(BioV_um3_L = sum(Biovolume_uM3_L, na.rm = TRUE), .groups = "drop") %>%
+  filter(!TaxonGroup %in% c("Other","Coccolithophore", "Diatom","Protozoa")) 
+
+NRSHTGPB1 <- NRSPsamp %>% 
+  left_join(NRSHTGPB1, by = "Sample") %>% 
+  mutate(TaxonGroup = ifelse(is.na(TaxonGroup), "Ciliate", TaxonGroup),
+         BioV_um3_L = ifelse(is.na(BioV_um3_L), 0, BioV_um3_L)) %>% 
+  arrange(-desc(TaxonGroup))
+
+NRSHTGPB <-  NRSHTGPB1 %>% 
+  pivot_wider(names_from = TaxonGroup, values_from = BioV_um3_L, values_fill = list(BioV_um3_L = 0)) %>% 
+  arrange(desc(SampleDateLocal)) %>% 
+  select(-Sample)
+
+fwrite(NRSHTGPB, file = paste0(outD,.Platform$file.sep,"NRS_phytoBioV_HTG_mat.csv"), row.names = FALSE)
+
+#### Genus ####
+
+# Check genus are effected by change log
+nrslg <- NRSPcl %>% 
+  mutate(genus1 = word(TaxonName, 1),
+         genus2 = word(ParentName, 1)) %>%
+  mutate(same = ifelse(genus1==genus2, "yes", "no")) %>%
+  filter(same == "no")# no changes at genera level
+
+# for non change log species
+NRSGenPB1 <- NRSPdat %>% 
+  filter(!TaxonName %in% levels(as.factor(nrslg$TaxonName))) %>% 
+  group_by(Sample, Genus) %>% 
+  summarise(BioV_um3_L = sum(Biovolume_uM3_L, na.rm = TRUE), .groups = "drop") %>% 
+  drop_na(Genus) 
+
+NRSGenPB1 <- NRSPsamp %>% 
+  left_join(NRSGenPB1, by = "Sample") %>% 
+  mutate(StartDate = ymd("2007-12-19"),
+         Genus = ifelse(is.na(Genus), "Acanthoica", Genus),
+         BioV_um3_L = ifelse(is.na(BioV_um3_L), 0, BioV_um3_L)) %>% 
+  group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
+  summarise(BioV_um3_L = sum(BioV_um3_L), .groups = "drop") %>% 
+  as.data.frame()
+
+# add change log species with -999 for NA"s and real absences as 0"s
+NRSGenPB2 <- NRSPdat %>% 
+  filter(TaxonName %in% levels(as.factor(nrslg$TaxonName))) %>% 
+  left_join(NRSPcl, by = "TaxonName") %>%
+  mutate(Genus = as_factor(Genus)) %>% 
+  drop_na(Genus) %>%
+  group_by(Sample, StartDate, Genus) %>% 
+  summarise(BioV_um3_L = sum(Biovolume_uM3_L, na.rm = TRUE), .groups = "drop") 
+
+for (i in 1:nlevels(NRSGenPB2$Genus)) {
+  Dates <- as.data.frame(NRSGenPB2) %>% 
+    filter(Genus == Genus[i]) %>% 
+    slice(1) %>% 
+    droplevels()
+  
+  gen <- as.data.frame(NRSGenPB2) %>% 
+    filter(Genus == Genus[i]) %>% 
+    droplevels() 
+  
+  gen <- NRSPsamp %>% 
+    left_join(gen, by = "Sample") %>%
+    mutate(StartDate = replace(StartDate, is.na(StartDate), Dates$StartDate),
+           Genus = replace(Genus, is.na(Genus), Dates$Genus),
+           BioV_um3_L = replace(BioV_um3_L, StartDate>SampleDateLocal, -999), 
+           BioV_um3_L = replace(BioV_um3_L, StartDate<SampleDateLocal & is.na(BioV_um3_L), 0)) %>% 
+    group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
+    summarise(BioV_um3_L = sum(BioV_um3_L), .groups = "drop") %>% 
+    as.data.frame()     
+  NRSGenPB1 <- rbind(NRSGenPB1, gen)
+}
+
+NRSGenPB1 <- NRSGenPB1 %>% 
+  group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, Genus) %>%
+  summarise(BioV_um3_L = max(BioV_um3_L), .groups = "drop") %>% 
+  arrange(-desc(Genus)) %>% 
+  as.data.frame()
+
+# select maximum value of duplicates, but leave -999 for all other occurrences as not regularly identified
+NRSGenPB <-  NRSGenPB1 %>% 
+  pivot_wider(names_from = Genus, values_from = BioV_um3_L, values_fill = list(BioV_um3_L = 0)) %>% 
+  arrange(desc(SampleDateLocal))  %>% 
+  mutate(SampleDateLocal = as.character(SampleDateLocal))
+
+fwrite(NRSGenPB, file = paste0(outD,.Platform$file.sep,"NRS_phytoBioV_genus_mat.csv"), row.names = FALSE)
+
+#### Species ####
+
+# Check at what level we need change log
+nrsls <- NRSPcl %>% 
+  mutate(same = ifelse(TaxonName == ParentName, "yes", "no")) %>%
+  filter(same == "no") # no changes at genera level
+
+# for non change log species
+
+NRSSpecPB1 <- NRSPdat %>% 
+  filter(!TaxonName %in% levels(as.factor(nrsls$TaxonName))
+         & Species != "spp." & !is.na(Species) & !grepl("cf.", Species)) %>% 
+  group_by(Sample, TaxonName) %>% 
+  summarise(BioV_um3_L = sum(Biovolume_uM3_L, na.rm = TRUE), .groups = "drop")
+
+NRSSpecPB1 <- NRSPsamp %>% 
+  left_join(NRSSpecPB1, by = "Sample") %>% 
+  mutate(StartDate = ymd("2007-12-19"),
+         TaxonName = ifelse(is.na(TaxonName), "Paralia sulcata", TaxonName),
+         BioV_um3_L = ifelse(is.na(BioV_um3_L), 0, BioV_um3_L)) %>% 
+  group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, TaxonName) %>%
+  summarise(BioV_um3_L = sum(BioV_um3_L), .groups = "drop") %>% 
+  as.data.frame()
+
+# add change log species with -999 for NA"s and real absences as 0"s
+NRSSpecPB2 <- NRSPdat %>% 
+  filter(TaxonName %in% levels(as.factor(nrsls$TaxonName))
+         & Species != "spp." & !is.na(Species) & !grepl("cf.", Species)) %>% 
+  left_join(NRSPcl, by = "TaxonName") %>%
+  mutate(TaxonName = as_factor(TaxonName)) %>% 
+  drop_na(TaxonName) %>%
+  group_by(Sample, StartDate, TaxonName) %>% 
+  summarise(BioV_um3_L = sum(Cells_L, na.rm = TRUE), .groups = "drop") 
+
+for (i in 1:nlevels(NRSSpecPB2$TaxonName)) {
+  Dates <- as.data.frame(NRSSpecPB2) %>% 
+    filter(TaxonName == TaxonName[i]) %>% 
+    slice(1)  %>% 
+    droplevels()
+  
+  spec <- as.data.frame(NRSSpecPB2) %>% 
+    filter(TaxonName == TaxonName[i]) %>% 
+    droplevels() 
+  
+  spec <- NRSPsamp %>% 
+    left_join(spec, by = "Sample") %>%
+    mutate(StartDate = replace(StartDate, is.na(StartDate), Dates$StartDate),
+           TaxonName = replace(TaxonName, is.na(TaxonName), Dates$TaxonName),
+           BioV_um3_L = replace(BioV_um3_L, StartDate>SampleDateLocal, -999), 
+           BioV_um3_L = replace(BioV_um3_L, StartDate<SampleDateLocal & is.na(BioV_um3_L), 0)) %>% 
+    group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, TaxonName) %>%
+    summarise(BioV_um3_L = sum(BioV_um3_L), .groups = "drop") %>% 
+    as.data.frame()     
+  NRSSpecPB1 <- rbind(NRSSpecPB1, spec)
+}
+
+NRSSpecPB1 <- NRSSpecPB1 %>% 
+  group_by(NRScode, Station, Latitude, Longitude, SampleDateLocal, Year, Month, Day, Time_24hr, TaxonName) %>%
+  summarise(BioV_um3_L = max(BioV_um3_L), .groups = "drop") %>% 
+  arrange(-desc(TaxonName)) %>% 
+  as.data.frame() 
+# select maximum value of duplicates, but leave -999 for all other occurences as not regularly identified
+
+NRSSpecPB <-  NRSSpecPB1 %>% 
+  pivot_wider(names_from = TaxonName, values_from = BioV_um3_L, values_fill = list(BioV_um3_L = 0)) %>% 
+  arrange(desc(SampleDateLocal))  %>% 
+  mutate(SampleDateLocal = as.character(SampleDateLocal))
+
+fwrite(NRSSpecPB, file = paste0(outD,.Platform$file.sep,"NRS_phytoBioV_species_mat.csv"), row.names = FALSE)
 
 
 
