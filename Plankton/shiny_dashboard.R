@@ -6,6 +6,8 @@ suppressPackageStartupMessages({
   library(plotly)
   library(leaflet)
   library(purrr)
+  library(ggplot2)
+  library(ggridges)
   library(lubridate)
   library(rnaturalearth)
   library(rnaturalearthdata)
@@ -20,9 +22,13 @@ outD <- "Output"
 PCIdata <- read_csv(paste0(rawD,.Platform$file.sep,"PCISampCPR.csv"), na = c("(null)", NaN)) %>% 
   rename(route = ROUTE, region = REGION, Latitude = LATITUDE, Longitude = LONGITUDE, SampleDate = SAMPLEDATEUTC)
 Zdata <- read_csv(paste0(rawD,.Platform$file.sep,"ZSampCPR.csv"), na = c("(null)", NaN)) %>% 
-  rename(route = ROUTE, region = REGION, Latitude = LATITUDE, Longitude = LONGITUDE, SampleDate = SAMPLEDATEUTC)
+  rename(sample = SAMPLE, route = ROUTE, region = REGION, Latitude = LATITUDE, Longitude = LONGITUDE, SampleDate = SAMPLEDATEUTC)
 Pdata <- read_csv(paste0(rawD,.Platform$file.sep,"PSampCPR.csv"), na = c("(null)", NaN)) %>% 
-  rename(route = ROUTE, region = REGION, Latitude = LATITUDE, Longitude = LONGITUDE, SampleDate = SAMPLEDATEUTC)
+  rename(sample = SAMPLE, route = ROUTE, region = REGION, Latitude = LATITUDE, Longitude = LONGITUDE, SampleDate = SAMPLEDATEUTC)
+Pabun <- read_csv(paste0(rawD,.Platform$file.sep,"CPR_phyto_raw.csv"), na = c("(null)", NaN)) %>%
+  rename(sample = SAMPLE, Taxon = TAXON_NAME, PAbun = PHYTO_ABUNDANCE_M3)
+Samps <- read_csv(paste0(rawD,.Platform$file.sep,"AllSampCPR.csv"), na = c("(null)", NaN)) %>%
+  rename(sample = SAMPLE)
 miles <- read_csv(paste0(rawD,.Platform$file.sep,"mileageCPR.csv"), na = c("(null)", NaN)) %>%
   rename(tow = TOW, SampleDate = SAMPLEDATEUTC, miles = MILES) %>%
   mutate(year = year(SampleDate)) %>% group_by(year) %>% summarise(miles = sum(miles)) %>%
@@ -39,8 +45,11 @@ maptext <- mapdata %>% group_by(region) %>% summarise(textno = n()) %>% # make t
 PCImap <- PCIdata %>% mutate(Latitude = round(Latitude/0.5, 0)*0.5, 
                              Longitude = round(Longitude/0.5, 0)*0.5,
                              mon = month(SampleDate, label = TRUE),
-                             season = quarter(SampleDate)) %>%
-  group_by(Latitude, Longitude, season, region) %>% summarise(PCI = round(mean(PCI)/0.5,0)*0.5)
+                             season = quarter(SampleDate), 
+                             seasonchr = ifelse(season == 1, 'Jan - Mar',
+                                             ifelse(season == 2, 'Apr - Jun',
+                                                    ifelse(season == 3, 'Jul - Sep', 'Oct - Nov')))) %>%
+  group_by(Latitude, Longitude, season, region) %>% summarise(PCI = round(mean(PCI)/0.5,0)*0.5) %>% untib
 
 # parameters used in mapping   
 aus <-  ne_countries(country = c('australia', 'papua new guinea', 'indonesia'), scale = "medium", returnclass = 'sf')   
@@ -49,6 +58,21 @@ colscale <- scale_colour_gradientn(name = '', colors = cols)
 mind <- min(miles$year)
 maxd <- max(miles$year)
 n <- floor(sum(miles$miles)/21600)
+
+# Tripos kernel density plots (need to account for sampling bias for temps, doesn't use abund either so not as robust as our sti calcs, interesting plot method though)
+# Should plot our kernel denisty outputs this way though, super idea!!
+Tripos <- Pabun %>% filter(grepl("Tripos", GENUS), !grepl("spp", SPECIES)) %>% select(c("Taxon", "sample","PAbun")) %>%
+  inner_join(Samps %>% select(c("sample", "SST_C")), by = "sample", all = 'TRUE') %>%
+  mutate(sst = round(SST_C/0.5, 0)*0.5) #%>%
+#  group_by(sst, Taxon) %>% summarise(Abun = sum(PAbun, na.rm = TRUE))
+
+Top5 <- Tripos %>% group_by(Taxon) %>% summarise(tots = sum(Abun, na.rm = TRUE)) %>% arrange(-tots) %>% slice(1:5)
+
+Tripos <- Tripos %>% filter(Taxon %in% Top5$Taxon) %>% arrange(Taxon, sst) %>% untibble()
+ 
+plot3 <- ggplot(Tripos, aes(x = sst, y = Taxon, group = Taxon)) +
+  geom_density_ridges()  
+plot3
 
 server <- function(input, output) {
   output$plot <- renderPlotly({
