@@ -1212,13 +1212,6 @@ SAMPLE,NRS_CODE,TAXON_NAME,TAXON_PER_M3
 13651,PHB20160407,"Scorpaenidae - undifferentiated",0.012
 13651,PHB20160407,"Trachurus novaezelandiae",0.019
 13651,PHB20160407,"Cynoglossidae - undifferentiated",0.003
-13652,ROT20160621,"Engraulis australis",(null)
-13652,ROT20160621,"Gonostomatidae - undifferentiated",(null)
-13652,ROT20160621,"Triglidae & Peristediidae - undifferentiated",(null)
-13652,ROT20160621,""Superclass" Pisces - undifferentiated",(null)
-13652,ROT20160621,"Gonostomatidae - undifferentiated",(null)
-13652,ROT20160621,"Myctophidae - undifferentiated",(null)
-13652,ROT20160621,"Scorpaenidae - undifferentiated",(null)
 13653,PHB20160502,"Platycephalidae - undifferentiated",0.005
 13653,PHB20160502,"Serranidae subfam. Anthiinae",0.008
 13653,PHB20160502,"Sillago flindersi",0.003
@@ -1443,30 +1436,6 @@ SAMPLE,NRS_CODE,TAXON_NAME,TAXON_PER_M3
 13659,PHB20160615,"Serranidae subfam. Anthiinae",0.003
 13659,PHB20160615,"Priacanthidae - undifferentiated",0.003
 13659,PHB20160615,"Cepola australis",0.013
-13660,ROT20160722,"Sardinops sagax",(null)
-13660,ROT20160722,"Myctophidae - undifferentiated",(null)
-13660,ROT20160722,"Syngnathidae - undifferentiated",(null)
-13660,ROT20160722,"Scorpaenidae - undifferentiated",(null)
-13661,ROT20161004,""Superclass" Pisces - undifferentiated",(null)
-13661,ROT20161004,"Sardinops sagax",(null)
-13661,ROT20161004,"Gonostomatidae - undifferentiated",(null)
-13661,ROT20161004,"Myctophidae - undifferentiated",(null)
-13661,ROT20161004,"Platycephalidae - undifferentiated",(null)
-13661,ROT20161004,"Pseudocaranx georgianus",(null)
-13661,ROT20161004,"Labridae - undifferentiated",(null)
-13661,ROT20161004,"Creedia spp.",(null)
-13661,ROT20161004,"Tripterygiidae - undifferentiated",(null)
-13661,ROT20161004,"Callionymidae - undifferentiated",(null)
-13661,ROT20161004,"Pseudorhombus spp.",(null)
-13661,ROT20161004,"Monacanthidae - undifferentiated",(null)
-13661,ROT20161004,""Superclass" Pisces - undifferentiated",(null)
-13661,ROT20161004,"Gobiesocidae - undifferentiated",(null)
-13661,ROT20161004,"Scorpaenidae - undifferentiated",(null)
-13661,ROT20161004,"Platycephalidae - undifferentiated",(null)
-13661,ROT20161004,"Labridae - undifferentiated",(null)
-13661,ROT20161004,"Tripterygiidae - undifferentiated",(null)
-13661,ROT20161004,"Callionymidae - undifferentiated",(null)
-13661,ROT20161004,"Monacanthidae - undifferentiated",(null)
 13662,ROT20161024,"Zeidae - undifferentiated",0.003
 13662,ROT20161024,"Mullidae - undifferentiated",0.003
 13662,ROT20161024,"Labridae - undifferentiated",0.003
@@ -3539,11 +3508,6 @@ SAMPLE,NRS_CODE,TAXON_NAME,TAXON_PER_M3
 13732,ROT20180511,"Pomacentridae - undifferentiated",0.006
 13732,ROT20180511,"Cheilodactylus spp.",0.006
 13732,ROT20180511,"Monacanthidae - undifferentiated",0.006
-13733,KAI20180515,""Superclass" Pisces - undifferentiated",(null)
-13733,KAI20180515,"Sardinops sagax",(null)
-13733,KAI20180515,"Thyrsites atun",(null)
-13733,KAI20180515,"Scomber australasicus",(null)
-13733,KAI20180515,"Monacanthidae - undifferentiated",(null)
 13733,KAI20180515,""Superclass" Pisces - undifferentiated",0.027
 13733,KAI20180515,"Sardinops sagax",0.13
 13733,KAI20180515,"Myctophidae - undifferentiated",0.003
